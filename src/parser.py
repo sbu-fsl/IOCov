@@ -3,6 +3,11 @@
 from constants import *
 from utilities import *
 import sys
+import pickle 
+
+open_flag_unfilter = {}
+open_flag_filtered = {}
+GET_FLAGS = True
 
 # The main class to parse all the input and output 
 class TraceParser:
@@ -75,6 +80,11 @@ class TraceParser:
                 # if it has flags as argument
                 if fg_list:
                     fg_int = int(fg_list[0])
+                    if GET_FLAGS:
+                        if fg_int in open_flag_unfilter.keys():
+                            open_flag_unfilter[fg_int] += 1
+                        else:
+                            open_flag_unfilter[fg_int] = 1                   
                     # if O_RDONLY is set
                     if fg_int & 1 == 0:
                         self.unfilter_input_cov[scname]['flags']['O_RDONLY'] += 1
@@ -85,7 +95,12 @@ class TraceParser:
                     print('Error line: ', line)
                     sys.exit('INPUT: {} - no flags error'.format(scname))
             # HANDLE: creat() flags
-            elif 'syscall_entry_creat' in line:   
+            elif 'syscall_entry_creat' in line:
+                if GET_FLAGS:
+                    if CREAT_FLAG_DEC in open_flag_unfilter.keys():
+                        open_flag_unfilter[CREAT_FLAG_DEC] += 1
+                    else:
+                        open_flag_unfilter[CREAT_FLAG_DEC] = 1
                 self.unfilter_input_cov[scname]['flags']['O_CREAT'] += 1
                 self.unfilter_input_cov[scname]['flags']['O_WRONLY'] += 1
                 self.unfilter_input_cov[scname]['flags']['O_TRUNC'] += 1
@@ -113,12 +128,22 @@ class TraceParser:
                 self.valid_open = True
                 # HANDLE: open() flags
                 if 'syscall_entry_open' in line:
+                    if GET_FLAGS:
+                        if fg_int in open_flag_filtered.keys():
+                            open_flag_filtered[fg_int] += 1
+                        else:
+                            open_flag_filtered[fg_int] = 1                   
                     if fg_int & 1 == 0:
                         self.input_cov[scname]['flags']['O_RDONLY'] += 1
                     for each_bit in OPEN_BIT_FLAGS:
                         if fg_int & each_bit == each_bit:
                             self.input_cov[scname]['flags'][OPEN_BIT_FLAGS[each_bit]] += 1
                 elif 'syscall_entry_creat' in line:
+                    if GET_FLAGS:
+                        if CREAT_FLAG_DEC in open_flag_filtered.keys():
+                            open_flag_filtered[CREAT_FLAG_DEC] += 1
+                        else:
+                            open_flag_filtered[CREAT_FLAG_DEC] = 1                    
                     self.input_cov[scname]['flags']['O_CREAT'] += 1
                     self.input_cov[scname]['flags']['O_WRONLY'] += 1
                     self.input_cov[scname]['flags']['O_TRUNC'] += 1
@@ -655,4 +680,9 @@ class TraceParser:
                         sys.exit('Unrecognized syscall with OUTPUT_PREFIX')                     
                 else:
                     sys.exit('Unrecognized line of syscall as no input or output prefix') 
+        if GET_FLAGS:
+            with open('open_flag_unfilter.pkl', 'wb') as f:
+                pickle.dump(open_flag_unfilter, f)
+            with open('open_flag_filtered.pkl', 'wb') as f:
+                pickle.dump(open_flag_filtered, f)    
         return self.input_cov, self.output_cov, self.unfilter_input_cov

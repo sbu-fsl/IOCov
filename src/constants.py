@@ -136,4 +136,7 @@ BOUNDARIES = [0] + [2 ** x for x in range(65)]
 
 LOG2_XAXIS= [-1] + list(range(65))
 
-# Output Coverage Plotting
+# IOCov Analyzer
+
+# O_CREAT (0100)|O_WRONLY (0001)|O_TRUNC (1000) 1101
+CREAT_FLAG_DEC = 13

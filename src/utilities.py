@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
+from constants import *
 import re
+
+###### Parser Utilities
 
 def find_xfstests_filename(text, c):
     return re.findall(r'%s(\"/mnt.*\")' % c, text)
