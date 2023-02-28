@@ -66,6 +66,9 @@ def main(args):
                 tplot.plot_inputs()
             if output_only:
                 tplot.plot_outputs()
+            if not input_only and not output_only:
+                tplot.plot_inputs()
+                tplot.plot_outputs()
 
 if __name__ == "__main__":
     cwd = os.getcwd()
@@ -94,7 +97,7 @@ if __name__ == "__main__":
     # Need to plot input and/or output coverage
     parser.add_argument('--plot', default=False, action=argparse.BooleanOptionalAction)
     # Directory to save plots
-    parser.add_argument('-d','--plotdir', default=os.path.join(cwd, 'iocov_plots'), type=str, help='Directory path to save plots')
+    parser.add_argument('-d','--plotdir', default=os.path.join(cwd, 'Assets'), type=str, help='Directory path to save plots')
     # Plot title
     parser.add_argument('-t','--plottitle', default='xfstests_all_tests_Ext4', type=str, help='Title of all plots')
     # Plot unfilter

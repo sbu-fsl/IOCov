@@ -83,7 +83,7 @@ class TracePlotter:
         self.input_coords = init_input_coords()
         self.output_coords = init_output_coords()
         self.unfilter_input_coords = init_input_coords()
-        self.errors_dict_path = '/mcfs2/LTTng-xfstests-2022-1211/yf-filesystem-utility/LTTng-syscall-tracing-2022-1215/syscall-man-htmls/errors_dict.pkl'
+        self.errors_dict_path = 'errors_dict.pkl'
         self.bytes_xaxis, self.bytes_yaxis, self.bytes_log2_xaxis = produce_bytes_axes()
     
     def transform_lseek_offset(self):
