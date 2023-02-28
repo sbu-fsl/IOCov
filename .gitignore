@@ -1,0 +1,9 @@
+# LTTng
+*.json
+*.png
+*.tar
+*.tar.gz
+
+# IOCov
+*.html
+*.pdf
