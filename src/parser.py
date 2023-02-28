@@ -101,13 +101,18 @@ class TraceParser:
         self.valid_fchmod = False # fchmod
         self.valid_chdir = False # chdir/fchdir
 
-    # open input (syscall_entry_open*): flags and mode
+    # syscall_entry_creat:
+    # [13:53:21.899920952] (+0.002925575) dhcp193.fsl.cs.sunysb.edu 
+    # syscall_entry_creat: { cpu_id = 3 }, { pathname = "XXXXXXXXXXXX.0", mode = 438 }
+    # The flag is fixed for syscall_entry_creat (O_CREAT|O_WRONLY|O_TRUNC)
+
+    # open input (syscall_entry_open* syscall_entry_creat): flags and mode
     def handle_open(self, scname, line, is_input):
         if is_input:
             ### Unfiltered 
             fg_int = -1
             mode_int = -1
-            # HANDLE: open() flags
+            # HANDLE: open*() flags
             if 'syscall_entry_open' in line:
                 fg_list = find_number(line, 'flags = ') 
                 # if it has flags as argument
@@ -121,9 +126,16 @@ class TraceParser:
                             self.unfilter_input_cov[scname]['flags'][OPEN_BIT_FLAGS[each_bit]] += 1 
                 else:
                     print('Error line: ', line)
-                    sys.exit('INPUT: {} - no flags error'.format(scname))       
+                    sys.exit('INPUT: {} - no flags error'.format(scname))
+            # HANDLE: creat() flags
+            elif 'syscall_entry_creat' in line:   
+                self.unfilter_input_cov[scname]['flags']['O_CREAT'] += 1
+                self.unfilter_input_cov[scname]['flags']['O_WRONLY'] += 1
+                self.unfilter_input_cov[scname]['flags']['O_TRUNC'] += 1
+            else:
+                sys.exit('INPUT: {} unfiltered line format error'.format(scname))
 
-            # HANDLE: open() mode
+            # HANDLE: open() mode -- every open variants has mode including creat
             mode_list = find_number(line, 'mode = ')
             if mode_list:
                 mode_int = int(mode_list[0])
@@ -137,8 +149,10 @@ class TraceParser:
             ### Filtering 
             ## Filter 1: path name (open path could be a file or a dir)
             fn_list = find_xfstests_filename(line, 'filename = ')
+            ## Filter 2: relative path (dfd)
+            dfd_list = find_number(line, 'dfd = ')
             # if it's for desired mount points (e.g., xfstests test and scratch)
-            if fn_list: 
+            if fn_list or (dfd_list and (int(dfd_list[0]) in self.valid_fds or (int(dfd_list[0]) == AT_FDCWD_VAL and self.valid_cwd))): 
                 self.valid_open = True
                 # HANDLE: open() flags
                 if 'syscall_entry_open' in line:
@@ -147,20 +161,20 @@ class TraceParser:
                     for each_bit in OPEN_BIT_FLAGS:
                         if fg_int & each_bit == each_bit:
                             self.input_cov[scname]['flags'][OPEN_BIT_FLAGS[each_bit]] += 1
+                elif 'syscall_entry_creat' in line:
+                    self.input_cov[scname]['flags']['O_CREAT'] += 1
+                    self.input_cov[scname]['flags']['O_WRONLY'] += 1
+                    self.input_cov[scname]['flags']['O_TRUNC'] += 1
+                else:
+                    sys.exit('INPUT: {} filtered line format error'.format(scname))
                 if mode_int in self.input_cov[scname]['mode'].keys():
                     self.input_cov[scname]['mode'][mode_int] += 1
                 else:
                     self.input_cov[scname]['mode'][mode_int] = 1
             else:
                 self.valid_open = False
-            
-            dfd_list = find_number(line, 'dfd = ')
-            if dfd_list:
-                dfd_int = int(dfd_list[0])
-                if dfd_int in self.valid_fds or (dfd_int == AT_FDCWD_VAL and self.valid_cwd):
-                    self.valid_open = True
 
-        # open output (syscall_exit_open*)
+        # open output (syscall_exit_open* syscall_entry_creat)
         else:
             # if the open is for the test target
             if self.valid_open:
