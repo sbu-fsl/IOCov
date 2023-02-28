@@ -1,9 +1,14 @@
+# Python
+__pycache__/
+
 # LTTng
-*.json
-*.png
+*.log
 *.tar
 *.tar.gz
 
 # IOCov
+*.pkl
+*.json
 *.html
 *.pdf
+*.png

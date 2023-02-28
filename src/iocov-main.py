@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
+
+# import LTTng parser to parse LTTng output logs
 from parser import *
+# Plot input/output coverage
 from plotter import *
 import pickle 
 import time
@@ -69,17 +72,17 @@ if __name__ == "__main__":
     # Handle Arguments
     # Example commands:
     ## Parse LTTng logs and get pickle files for input/output cov only
-    #### python3 analyzer-main.py --parse
+    #### python3 iocov-main.py --parse
     ## When already has i/o cov pickle files, generate json files (without plotting)
-    #### python3 analyzer-main.py --no-parse --json
+    #### python3 iocov-main.py --no-parse --json
     ## When already has i/o cov pickle files, plot without considering unfiltered input coverage
-    #### python3 analyzer-main.py --no-parse --plot
+    #### python3 iocov-main.py --no-parse --plot
     ## When already has i/o cov pickle files, plot with considering unfiltered input coverage
-    #### python3 analyzer-main.py --no-parse --plot --plotunfilter
+    #### python3 iocov-main.py --no-parse --plot --plotunfilter
     ## Plot input coverage only
-    #### python3 analyzer-main.py --no-parse --plot -i
+    #### python3 iocov-main.py --no-parse --plot -i
     ## Plot output coverage only
-    #### python3 analyzer-main.py --no-parse --plot -o
+    #### python3 iocov-main.py --no-parse --plot -o
     parser = argparse.ArgumentParser()
     # Need Python 3.9+
     # Parse LTTng log files and save to pickle files
