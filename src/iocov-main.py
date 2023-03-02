@@ -14,47 +14,48 @@ import os
 def main(args):
     # Fetch arguments
     need_parse = args.parse
+    name_suffix = args.suffix
     # define empty input/output coverage dict
     input_cov = {}
     output_cov = {}
     unfilter_input_cov = {}
     if need_parse:
         file_path = args.filepath
-        if (os.path.exists('input_cov_chdir.pkl') or 
-            os.path.exists('output_cov_chdir.pkl') or 
-            os.path.exists('unfilter_input_cov_chdir.pkl')):
+        if (os.path.exists('input_cov_{}.pkl'.format(name_suffix)) or 
+            os.path.exists('output_cov_{}.pkl'.format(name_suffix)) or 
+            os.path.exists('unfilter_input_cov_{}.pkl'.format(name_suffix))):
             sys.exit('Cov pickle files already exist.')
         # tic = time.perf_counter()
         tp = TraceParser(file_path)
         input_cov, output_cov, unfilter_input_cov = tp.cal_input_output_cov()
         # toc = time.perf_counter()
         # print(f"LTTng analyzer completed in {toc - tic:0.4f} seconds")
-        with open('input_cov_chdir.pkl', 'wb') as f:
+        with open('input_cov_{}.pkl'.format(name_suffix), 'wb') as f:
             pickle.dump(input_cov, f)
-        with open('output_cov_chdir.pkl', 'wb') as f:
+        with open('output_cov_{}.pkl'.format(name_suffix), 'wb') as f:
             pickle.dump(output_cov, f)
-        with open('unfilter_input_cov_chdir.pkl', 'wb') as f:
+        with open('unfilter_input_cov_{}.pkl'.format(name_suffix), 'wb') as f:
             pickle.dump(unfilter_input_cov, f)
     else:
         need_json = args.json
         need_plot = args.plot
         input_only = args.ploti
         output_only = args.ploto
-        with open('input_cov_chdir.pkl', 'rb') as f:
+        with open('input_cov_{}.pkl'.format(name_suffix), 'rb') as f:
             input_cov = pickle.load(f)
-        with open('output_cov_chdir.pkl', 'rb') as f:
+        with open('output_cov_{}.pkl'.format(name_suffix), 'rb') as f:
             output_cov = pickle.load(f)
-        with open('unfilter_input_cov_chdir.pkl', 'rb') as f:
+        with open('unfilter_input_cov_{}.pkl'.format(name_suffix), 'rb') as f:
             unfilter_input_cov = pickle.load(f)
         # Write input/output cov to json files if needed
         if need_json:
-            with open('input_cov_chdir.json', 'w') as fout:
+            with open('input_cov_{}.json'.format(name_suffix), 'w') as fout:
                 input_cov_str = json.dumps(input_cov, indent=4)
                 print(input_cov_str, file=fout)
-            with open('output_cov_chdir.json', 'w') as fout:
+            with open('output_cov_{}.json'.format(name_suffix), 'w') as fout:
                 output_cov_str = json.dumps(output_cov, indent=4)
                 print(output_cov_str, file=fout)
-            with open('unfilter_input_cov_chdir.json', 'w') as fout:
+            with open('unfilter_input_cov_{}.json'.format(name_suffix), 'w') as fout:
                 unfilter_input_cov_str = json.dumps(unfilter_input_cov, indent=4)
                 print(unfilter_input_cov_str, file=fout)
         if need_plot:
@@ -96,6 +97,8 @@ if __name__ == "__main__":
     parser.add_argument('--json', default=False, action=argparse.BooleanOptionalAction)
     # Need to plot input and/or output coverage
     parser.add_argument('--plot', default=False, action=argparse.BooleanOptionalAction)
+    # Suffix for the pkl and json file names 
+    parser.add_argument('-s','--suffix', default='mcfs_10m', type=str, help='the suffix of output file names')
     # Directory to save plots
     parser.add_argument('-d','--plotdir', default=os.path.join(cwd, 'Assets'), type=str, help='Directory path to save plots')
     # Plot title
