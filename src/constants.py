@@ -9,7 +9,7 @@ XFSTESTS_MP = ['/mnt/test', '/mnt/scratch']
     Syscall Constants
 """
 SYSCALLS = {
-    'open': ['open', 'openat', 'creat'],
+    'open': ['open', 'openat', 'creat', 'openat2'],
     'read': ['read', 'pread64'],
     'write': ['write', 'pwrite64'],
     'lseek': ['lseek', 'llseek'],
@@ -18,6 +18,26 @@ SYSCALLS = {
     'chmod': ['chmod', 'fchmod', 'fchmodat'],
     'close': ['close', 'close_range'], # No input coverage for close()
     'chdir': ['chdir', 'fchdir'] # No input coverage for chdir()
+}
+
+INPUT_SYSCALLS = {
+    'open': ['open', 'openat', 'creat', 'openat2'],
+    'read': ['read', 'pread64'],
+    'write': ['write', 'pwrite64'],
+    'lseek': ['lseek', 'llseek'],
+    'truncate': ['truncate', 'ftruncate'],
+    'mkdir': ['mkdir', 'mkdirat'],
+    'chmod': ['chmod', 'fchmod', 'fchmodat']
+}
+
+# MCFS_SYSCALLS handles:
+# open [] write lseek truncate mkdir chmod
+MCFS_SYSCALLS = {
+    'create_file': ['open'], # 'close'
+    'write_file': ['open', 'lseek', 'write'], # 'close'
+    'truncate': ['truncate'],
+    'mkdir': ['mkdir'],
+    'chmod': ['chmod']
 }
 
 # Ignore close()/chdir[] here because we don't measure input cov for them 
