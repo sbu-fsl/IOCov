@@ -120,7 +120,7 @@ class TraceParser:
             
             ### Filtering 
             ## Filter 1: path name (open path could be a file or a dir)
-            fn_list = find_xfstests_filename(line, 'filename = ')
+            fn_list = find_testing_filename(line, 'filename = ')
             ## Filter 2: relative path (dfd)
             dfd_list = find_number(line, 'dfd = ')
             # if it's for desired mount points (e.g., xfstests test and scratch)
@@ -433,7 +433,7 @@ class TraceParser:
                 sys.exit('INPUT: {}/ftruncate - no length error'.format(scname))
 
             if 'syscall_entry_truncate:' in line:
-                fn_list = find_xfstests_filename(line, 'path = ')
+                fn_list = find_testing_filename(line, 'path = ')
                 if fn_list: 
                     self.valid_truncate = True 
                     if length_int in self.input_cov[scname]['length'].keys():
@@ -498,7 +498,7 @@ class TraceParser:
             else:
                 sys.exit('INPUT: {} - no mode error')
 
-            fn_list = find_xfstests_filename(line, 'pathname = ')
+            fn_list = find_testing_filename(line, 'pathname = ')
             dfd_list = find_number(line, 'dfd = ')
             if fn_list or (dfd_list and int(dfd_list[0]) in self.valid_fds) or (dfd_list and int(dfd_list[0]) == AT_FDCWD_VAL and self.valid_cwd): 
                 self.valid_mkdir = True
@@ -538,7 +538,7 @@ class TraceParser:
             # syscall_entry_chmod: filename
             # syscall_entry_fchmodat: dfd, filename
             if 'syscall_entry_chmod:' in line or 'syscall_entry_fchmodat:' in line:
-                fn_list = find_xfstests_filename(line, 'filename = ')
+                fn_list = find_testing_filename(line, 'filename = ')
                 dfd_list = find_number(line, 'dfd = ')
                 if fn_list or (dfd_list and int(dfd_list[0]) in self.valid_fds) or (dfd_list and int(dfd_list[0]) == AT_FDCWD_VAL and self.valid_cwd): 
                     self.valid_chmod = True
@@ -596,7 +596,7 @@ class TraceParser:
         # chdir/fchdir input
         if is_input:
             if 'syscall_entry_chdir' in line:
-                fn_list = find_xfstests_filename(line, 'filename = ')
+                fn_list = find_testing_filename(line, 'filename = ')
                 if fn_list:
                     self.valid_chdir = True
                 else:

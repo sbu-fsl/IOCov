@@ -4,13 +4,19 @@ from constants import *
 import re
 
 ###### Parser Utilities
-
 def find_xfstests_filename(text, c):
     return re.findall(r'%s(\"/mnt.*\")' % c, text)
 
 # Apply to any postive/negative numbers
 def find_number(text, c):
     return re.findall(r'%s([-]?\d+)' % c, text)
+
+# MCFS RegEx single ext4 file system
+def find_mcfs_filename(text, c):
+    return re.findall(r'%s(\"/mnt/test-ext4-i0-s0.*\")' % c, text)
+
+def find_testing_filename(text, c):
+    return find_mcfs_filename(text, c)
 
 # Does not collect input coverage for close()
 def init_input_cov():
