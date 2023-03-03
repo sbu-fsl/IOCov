@@ -2,7 +2,10 @@
 
 from constants import *
 
-mcfs_seqs = ['/mcfs2/LTTng-xfstests-2022-1211/nfs4mc/fs-state/sequence-pan-20230301-180631-510120.log']
+# MCFS may contain many sequence files, so we need to analyze them all
+mcfs_seqs = ['/mcfs2/LTTng-xfstests-2022-1211/nfs4mc/fs-state/sequence-pan-20230302-204700-182406.log']
+
+mcfs_pkl = 'input_cov_mcfs_10m.pkl'
 
 mcfs_input_cnt = {}
 

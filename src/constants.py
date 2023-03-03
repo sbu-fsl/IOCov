@@ -160,3 +160,13 @@ LOG2_XAXIS= [-1] + list(range(65))
 
 # O_CREAT (0100)|O_WRONLY (0001)|O_TRUNC (1000) 1101
 CREAT_FLAG_DEC = 13
+
+# Count the number of syscalls for IOCOV saving ratio and accuracy 
+SC_COUNT_ARGS = {'open': 'mode', 
+            'read': 'count',
+            'write': 'count',
+            'lseek': 'whence',
+            'truncate': 'length',
+            'mkdir': 'mode',
+            'chmod': 'mode'
+            }
