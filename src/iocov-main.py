@@ -92,7 +92,7 @@ if __name__ == "__main__":
     # Parse LTTng log files and save to pickle files
     parser.add_argument('--parse', default=False, action=argparse.BooleanOptionalAction)
     # If need parse, we need to provide the log path
-    parser.add_argument('-f','--filepath', default='xfstests-lttng-all-related-ext4-all-chdir-fchdir-10333.log', type=str, help='Pathname to the LTTng log file')
+    parser.add_argument('-f','--filepath', default='mcfs-lttng-mcfs-ext4-256-chdir-fchdir-10m.log', type=str, help='Pathname to the LTTng log file')
     # Read the pickle files and save to json files
     parser.add_argument('--json', default=False, action=argparse.BooleanOptionalAction)
     # Need to plot input and/or output coverage
