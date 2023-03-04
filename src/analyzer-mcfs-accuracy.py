@@ -4,7 +4,7 @@ from constants import *
 from analyzerutils import *
 
 # MCFS may contain many sequence files, so we need to analyze them all
-mcfs_seqs = ['/mcfs2/LTTng-xfstests-2022-1211/nfs4mc/fs-state/sequence-pan-20230302-204700-182406.log']
+mcfs_seqs = ['sequence-pan-20230302-204700-182406.log']
 
 mcfs_pkl = 'input_cov_mcfs_10m.pkl'
 mcfs_iocov_input_cnt = get_syscall_count_from_pkl(mcfs_pkl)

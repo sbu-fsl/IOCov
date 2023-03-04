@@ -15,6 +15,7 @@ def main(args):
     # Fetch arguments
     need_parse = args.parse
     name_suffix = args.suffix
+    is_mcfs = args.mcfs
     # define empty input/output coverage dict
     input_cov = {}
     output_cov = {}
@@ -26,7 +27,7 @@ def main(args):
             os.path.exists('unfilter_input_cov_{}.pkl'.format(name_suffix))):
             sys.exit('Cov pickle files already exist.')
         # tic = time.perf_counter()
-        tp = TraceParser(file_path)
+        tp = TraceParser(file_path, is_mcfs)
         input_cov, output_cov, unfilter_input_cov = tp.cal_input_output_cov()
         # toc = time.perf_counter()
         # print(f"LTTng analyzer completed in {toc - tic:0.4f} seconds")
@@ -92,11 +93,13 @@ if __name__ == "__main__":
     # Parse LTTng log files and save to pickle files
     parser.add_argument('--parse', default=False, action=argparse.BooleanOptionalAction)
     # If need parse, we need to provide the log path
-    parser.add_argument('-f','--filepath', default='mcfs-lttng-mcfs-ext4-256-chdir-fchdir-10m.log', type=str, help='Pathname to the LTTng log file')
+    parser.add_argument('-f','--filepath', default='mcfs-lttng-mcfs-ext4-256-chdir-fchdir-10m-601.log', type=str, help='Pathname to the LTTng log file')
     # Read the pickle files and save to json files
     parser.add_argument('--json', default=False, action=argparse.BooleanOptionalAction)
     # Need to plot input and/or output coverage
     parser.add_argument('--plot', default=False, action=argparse.BooleanOptionalAction)
+    # Whether it is MCFS, which needs special handling for better accuracy (e.g., handle abstract state system calls)
+    parser.add_argument('--mcfs', default=True, action=argparse.BooleanOptionalAction)
     # Suffix for the pkl and json file names 
     parser.add_argument('-s','--suffix', default='mcfs_10m', type=str, help='the suffix of output file names')
     # Directory to save plots

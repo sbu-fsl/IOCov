@@ -7,6 +7,7 @@ import pickle
 
 open_flag_unfilter = {}
 open_flag_filtered = {}
+# If create open_flag_unfilter and open_flag_filtered
 GET_FLAGS = True
 
 # The main class to parse all the input and output 
@@ -31,8 +32,10 @@ class TraceParser:
                 (syscall-return) value: number of hit count of the key
     """
 
-    def __init__(self, path):
+    def __init__(self, path, is_mcfs):
         self.path = path 
+        # Boolen whether it is mcfs
+        self.is_mcfs = is_mcfs
         # Dict to save all (filtered) input coverage
         self.input_cov = init_input_cov() 
         # Dict to save all (filtered) output coverage
@@ -123,8 +126,13 @@ class TraceParser:
             fn_list = find_testing_filename(line, 'filename = ')
             ## Filter 2: relative path (dfd)
             dfd_list = find_number(line, 'dfd = ')
+            # Checking valid open specifically for MCFS
+            # It should not be only O_RDONLY
+            mcfs_valid_open =  False
+            if self.is_mcfs and fg_int != 0:
+                mcfs_valid_open = True
             # if it's for desired mount points (e.g., xfstests test and scratch)
-            if fn_list or (dfd_list and (int(dfd_list[0]) in self.valid_fds or (int(dfd_list[0]) == AT_FDCWD_VAL and self.valid_cwd))): 
+            if (fn_list or (dfd_list and (int(dfd_list[0]) in self.valid_fds or (int(dfd_list[0]) == AT_FDCWD_VAL and self.valid_cwd)))) and (not self.is_mcfs or (self.is_mcfs and mcfs_valid_open)): 
                 self.valid_open = True
                 # HANDLE: open() flags
                 if 'syscall_entry_open' in line:
