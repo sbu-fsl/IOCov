@@ -9,6 +9,14 @@ open_flag_unfilter = {}
 open_flag_filtered = {}
 # If create open_flag_unfilter and open_flag_filtered
 GET_FLAGS = True
+# Investigate open distributions (number of open/openat/openat2/creat)
+# Save the selected open lines to a file
+OPEN_VARS = SYSCALLS['open']
+OPEN_DUMP = True
+open_var_count = {}
+if OPEN_DUMP:
+    for open_var in OPEN_VARS:
+        open_var_count[open_var] = 0
 
 # The main class to parse all the input and output 
 class TraceParser:
@@ -134,6 +142,14 @@ class TraceParser:
             # if it's for desired mount points (e.g., xfstests test and scratch)
             if (fn_list or (dfd_list and (int(dfd_list[0]) in self.valid_fds or (int(dfd_list[0]) == AT_FDCWD_VAL and self.valid_cwd)))) and (not self.is_mcfs or (self.is_mcfs and mcfs_valid_open)): 
                 self.valid_open = True
+                if OPEN_DUMP:
+                    # Dump to the file
+                    with open('Open_Var_Lines.txt', 'a') as open_var_f:
+                        open_var_f.write(line)
+                    # Record open variants 
+                    for open_var in OPEN_VARS:
+                        if 'syscall_entry_{}:'.format(open_var) in line:
+                            open_var_count[open_var] += 1
                 # HANDLE: open() flags
                 if 'syscall_entry_open' in line:
                     if GET_FLAGS:
@@ -692,5 +708,8 @@ class TraceParser:
             with open('open_flag_unfilter.pkl', 'wb') as f:
                 pickle.dump(open_flag_unfilter, f)
             with open('open_flag_filtered.pkl', 'wb') as f:
-                pickle.dump(open_flag_filtered, f)    
+                pickle.dump(open_flag_filtered, f)
+        if OPEN_DUMP:
+            with open('open_var_count.pkl', 'wb') as f:
+                pickle.dump(open_var_count, f)            
         return self.input_cov, self.output_cov, self.unfilter_input_cov
