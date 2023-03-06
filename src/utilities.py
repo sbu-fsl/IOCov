@@ -13,10 +13,13 @@ def find_number(text, c):
 
 # MCFS RegEx single ext4 file system
 def find_mcfs_filename(text, c):
-    return re.findall(r'%s(\"/mnt/test-ext4-i0-s0.*\")' % c, text)
+    return re.findall(r'%s(\"/mnt/test-ext4-i0-s0/.*f-0[0-9]\")' % c, text)
 
 def find_testing_filename(text, c):
     return find_mcfs_filename(text, c)
+
+def find_mcfs_name(text, c):
+    return re.findall(r'%s(\"/mnt/test-ext4-i0-s0.*\")' % c, text)
 
 # Does not collect input coverage for close()
 def init_input_cov():

@@ -30,16 +30,6 @@ INPUT_SYSCALLS = {
     'chmod': ['chmod', 'fchmod', 'fchmodat']
 }
 
-# MCFS_SYSCALLS handles:
-# open [] write lseek truncate mkdir chmod
-MCFS_SYSCALLS = {
-    'create_file': ['open'], # 'close'
-    'write_file': ['open', 'lseek', 'write'], # 'close'
-    'truncate': ['truncate'],
-    'mkdir': ['mkdir'],
-    'chmod': ['chmod']
-}
-
 # Ignore close()/chdir[] here because we don't measure input cov for them 
 SYSCALL_ARGS = {
     'open': ['flags', 'mode'],
@@ -170,3 +160,33 @@ SC_COUNT_ARGS = {'open': 'mode',
             'mkdir': 'mode',
             'chmod': 'mode'
             }
+
+# MCFS Specific
+
+# MCFS_SYSCALLS handles:
+# open [] write lseek truncate mkdir chmod
+MCFS_SYSCALLS = {
+    'create_file': ['open'], # 'close'
+    'write_file': ['open', 'lseek', 'write'], # 'close'
+    'truncate': ['truncate'],
+    'mkdir': ['mkdir'],
+    'chmod': ['chmod']
+}
+
+MCFS_WRITE_SIZE = [0,
+                    3,
+                    13,
+                    555,
+                    1021,
+                    4001,
+                    6144,
+                    7790,
+                    12288,
+                    15567,
+                    16355,
+                    18432,
+                    23344,
+                    24576,
+                    30720,
+                    31121,
+                    64409]
