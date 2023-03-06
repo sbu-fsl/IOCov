@@ -22,9 +22,13 @@ total_lseek = 0
 lseek_open_pair_case = 0
 
 is_mcfs = True
+example_write_lines = []
+
+cnt = 0
 
 with open(logname, 'r', encoding="utf8", errors='ignore') as file:
     for line in file:
+        cnt += 1
         fg_int = -1
         if open_entry in line:
             fg_list = find_number(line, 'flags = ') 
@@ -38,20 +42,22 @@ with open(logname, 'r', encoding="utf8", errors='ignore') as file:
             if fn_list and (not is_mcfs or (is_mcfs and mcfs_valid_open)): 
                 last_line = line
                 total_open += 1
-        elif open_exit in line:
-            if open_entry in last_line:
-                total_pair_open += 1
-            last_line = ''
+        #elif open_exit in line:
+        #    if open_entry in last_line:
+        #        total_pair_open += 1
+        #    last_line = ''
         elif write_entry in line:
             total_write += 1
             if open_entry in last_line:
+                if len(example_write_lines) < 10:
+                    example_write_lines.append(cnt)
                 write_open_pair_case += 1
             last_line = ''
-        elif lseek_entry in line:
-            total_lseek += 1
-            if open_entry in last_line:
-                lseek_open_pair_case += 1
-            last_line = ''        
+        #elif lseek_entry in line:
+        #    total_lseek += 1
+        #    if open_entry in last_line:
+        #        lseek_open_pair_case += 1
+        #    last_line = ''        
         else:
             last_line = ''
 
@@ -60,13 +66,15 @@ total_pair_open:  19381011
 total_open:  23772932
 total_pair_open/total_open:  0.8152553921409441
 """
-
+"""
 print('total_pair_open: ', total_pair_open)
 print('total_open: ', total_open)
 print('total_pair_open/total_open: ', total_pair_open/total_open)
 
+print('total_lseek: ', total_lseek)
+print('lseek_open_pair_case: ', lseek_open_pair_case)
+"""
 print('total_write: ', total_write)
 print('write_open_pair_case: ', write_open_pair_case)
 
-print('total_lseek: ', total_lseek)
-print('lseek_open_pair_case: ', lseek_open_pair_case)
+print('example_write_lines: ', example_write_lines)
