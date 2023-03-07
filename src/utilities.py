@@ -21,6 +21,9 @@ def find_testing_filename(text, c):
 def find_mcfs_name(text, c):
     return re.findall(r'%s(\"/mnt/test-ext4-i0-s0.*\")' % c, text)
 
+def find_cpu_id(text):
+    return find_number(text, 'cpu_id = ')
+
 # Does not collect input coverage for close()
 def init_input_cov():
     input_cov = {}
