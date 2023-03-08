@@ -17,47 +17,41 @@ CPU_num = 4
 # exit -> False
 entry_exit = [False] * CPU_num
 
+sc_names = []
 # current syscall name
-sc_names = [''] * CPU_num
+for i in range(CPU_num):
+    sc_names.append({})
 
-# violations
-vios = [True] * CPU_num
-
-outliers = 0
+all_sc_names = {}
 
 with open(logname, 'r', encoding="utf8", errors='ignore') as file:
     for line in file:
         if 'entry' in line:
             # Entry: get cpu id to check
             cpu_id = int(find_cpu_id(line)[0])
-            if not entry_exit[cpu_id]:
-                entry_exit[cpu_id] = True
-            else:
-                outliers += 1
-                sys.exit('Entry: entry and exit not matching')
             # the system call name
             sc = line.split(' ')[3].split('_')[-1][:-1]
-            if sc_names[cpu_id] == '':
-                sc_names[cpu_id] = sc
+            if sc in sc_names[cpu_id].keys():
+                sc_names[cpu_id][sc] += 1
             else:
-                outliers += 1
-                sys.exit('Entry: system call not matching')
+                sc_names[cpu_id][sc] = 1
+            if sc in all_sc_names.keys():
+                all_sc_names[sc] += 1
+            else:
+                all_sc_names[sc] = 1
         elif 'exit' in line:
             # Exit: get cpu id to check
             cpu_id = int(find_cpu_id(line)[0])
-            if entry_exit[cpu_id]:
-                entry_exit[cpu_id] = False
-            else:
-                outliers += 1
-                sys.exit('Exit: entry and exit not matching')
             # the system call name
             sc = line.split(' ')[3].split('_')[-1][:-1]
-            if sc_names[cpu_id] == sc:
-                sc_names[cpu_id] = ''
-            else:
-                outliers += 1
-                sys.exit('Exit: system call not matching')
+            sc_names[cpu_id][sc] -= 1
+            all_sc_names[sc] -= 1
+            #if sc_names[cpu_id][sc] < 0:
+            #    print(line)
+            #    print('Error: no matching entry and exit')            
         else:
             sys.exit('Line is not entry or exit')
 
 print('All completed')
+print('sc_names: ', sc_names)
+print('all_sc_names: ', all_sc_names)
