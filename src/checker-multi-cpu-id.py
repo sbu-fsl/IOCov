@@ -9,7 +9,8 @@ from utilities import *
 # Is entry and exit on the same cpu?
 
 
-logname = '/mcfs2/LTTng-xfstests-2022-1211/IOCov/src/mcfs-lttng-mcfs-ext4-256-chdir-fchdir-10m-601.log'
+# logname = '/mcfs2/LTTng-xfstests-2022-1211/IOCov/src/mcfs-lttng-mcfs-ext4-256-chdir-fchdir-10m-601.log'
+logname = '/mcfs2/LTTng-xfstests-2022-1211/IOCov/src/xfstests-lttng-all-related-ext4-all-chdir-fchdir-4638.log'
 
 CPU_num = 4
 
@@ -35,6 +36,7 @@ with open(logname, 'r', encoding="utf8", errors='ignore') as file:
                 sc_names[cpu_id][sc] += 1
             else:
                 sc_names[cpu_id][sc] = 1
+            
             if sc in all_sc_names.keys():
                 all_sc_names[sc] += 1
             else:
@@ -44,8 +46,15 @@ with open(logname, 'r', encoding="utf8", errors='ignore') as file:
             cpu_id = int(find_cpu_id(line)[0])
             # the system call name
             sc = line.split(' ')[3].split('_')[-1][:-1]
-            sc_names[cpu_id][sc] -= 1
-            all_sc_names[sc] -= 1
+            if sc in sc_names[cpu_id].keys():
+                sc_names[cpu_id][sc] -= 1
+            else:
+                sc_names[cpu_id][sc] = -1
+            
+            if sc in all_sc_names.keys():
+                all_sc_names[sc] -= 1
+            else:
+                all_sc_names[sc] = -1
             #if sc_names[cpu_id][sc] < 0:
             #    print(line)
             #    print('Error: no matching entry and exit')            

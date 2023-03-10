@@ -18,9 +18,11 @@ open_ret = -1
 cpu_id_write = -1
 cpu_id_open = -1
 
+total_cnt = 0
 with open(logname, 'r', encoding="utf8", errors='ignore') as file:
     for line in file:
         if write_entry in line:
+            total_cnt += 1
             last_write_entry = True
             fd_list = find_number(line, 'fd = ')
             if fd_list:
@@ -36,9 +38,11 @@ with open(logname, 'r', encoding="utf8", errors='ignore') as file:
             cpu_id_list = find_cpu_id(line)
             if cpu_id_list:
                 cpu_id_open = int(cpu_id_list[0])
-            if fd_write == open_ret and cpu_id_write == cpu_id_open:
+            if fd_write == open_ret:
                 cnt += 1
         else:
             last_write_entry = False
     
 print('cnt value: ', cnt)
+print('total_cnt value: ', cnt)
+print('cnt / total_cnt value: ', cnt / total_cnt)
