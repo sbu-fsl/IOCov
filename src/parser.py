@@ -761,9 +761,70 @@ class TraceParser:
             else:
                 sys.exit('OUTPUT: {}/fsetxattr line error'.format(scname))        
 
+    def handle_getxattr(self, scname, line, is_input):
+        size_int = -1
+        # getxattr/lgetxattr/fgetxattr input
+        if is_input:
+            size_list = find_number(line, 'size = ')
+            if size_list:
+                size_int = int(size_list[0])
+                if size_int in self.unfilter_input_cov[scname]['size'].keys():
+                    self.unfilter_input_cov[scname]['size'][size_int] += 1
+                else:
+                    self.unfilter_input_cov[scname]['size'][size_int] = 1
+            else:
+                sys.exit('INPUT: {}/fgetxattr - no size error'.format(scname))         
 
-
-
+            if 'syscall_entry_getxattr:' in line or 'syscall_entry_lgetxattr:' in line:
+                fn_list = find_testing_filename(line, 'path = ')
+                if fn_list:
+                    self.valid_getxattr = True
+                    if size_int in self.input_cov[scname]['size'].keys():
+                        self.input_cov[scname]['size'][size_int] += 1
+                    else:
+                        self.input_cov[scname]['size'][size_int] = 1           
+                else:
+                    self.valid_getxattr = False                                    
+            elif 'syscall_entry_fgetxattr:' in line:
+                fd_list = find_number(line, 'fd = ')
+                if fd_list:
+                    fd_int = int(fd_list[0])
+                    if fd_int in self.valid_fds:
+                        self.valid_fgetxattr = True
+                        if size_int in self.input_cov[scname]['size'].keys():
+                            self.input_cov[scname]['size'][size_int] += 1
+                        else:
+                            self.input_cov[scname]['size'][size_int] = 1
+                    else:
+                        self.valid_fgetxattr = False
+            else:
+                sys.exit('INPUT: {}/fgetxattr line error'.format(scname))
+        # getxattr/lgetxattr/fgetxattr output
+        else:
+            if 'syscall_exit_getxattr:' in line or 'syscall_exit_lgetxattr:' in line:
+                if self.valid_getxattr:
+                    ret_list = find_number(line, 'ret = ')
+                    if ret_list:
+                        ret_num = int(ret_list[0])
+                        if ret_num in self.output_cov[scname].keys():
+                            self.output_cov[scname][ret_num] += 1
+                        else:
+                            self.output_cov[scname][ret_num] = 1
+                    else:
+                        sys.exit('OUTPUT: getxattr - no ret error')
+            elif 'syscall_exit_fgetxattr:' in line:
+                if self.valid_fgetxattr:
+                    ret_list = find_number(line, 'ret = ')
+                    if ret_list:
+                        ret_num = int(ret_list[0])
+                        if ret_num in self.output_cov[scname].keys():
+                            self.output_cov[scname][ret_num] += 1
+                        else:
+                            self.output_cov[scname][ret_num] = 1 
+                    else:
+                        sys.exit('OUTPUT: fgetxattr - no ret error')          
+            else:
+                sys.exit('OUTPUT: {}/fgetxattr line error'.format(scname))      
 
     def cal_input_output_cov(self):
         with open(self.path, 'r', encoding="utf8", errors='ignore') as file:
