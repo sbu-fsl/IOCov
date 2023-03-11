@@ -47,6 +47,15 @@ def init_input_cov():
                     empty_arg[each_arg] = whence_dict
                 else:
                     empty_arg[each_arg] = {} # lseek: offset
+        elif sc == 'setxattr':
+            for each_arg in SYSCALL_ARGS[sc]:
+                if each_arg == 'flags': # setxattr: flags
+                    flags_dict = {}
+                    for flags in ALL_SETXATTR_FLAGS:
+                        flags_dict[flags] = 0
+                    empty_arg[each_arg] = flags_dict
+                else:
+                    empty_arg[each_arg] = {} # setxattr: size
         else:
             for each_arg in SYSCALL_ARGS[sc]:
                 empty_arg[each_arg] = {}

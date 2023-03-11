@@ -133,6 +133,16 @@ ALL_LSEEK_WHENCES = [
 ]
 
 """
+    setxattr Constants
+"""
+SETXATTR_FLAGS_NUMS = {
+    0: 'XATTR_CREATE',
+    1: 'XATTR_REPLACE'
+}
+
+ALL_SETXATTR_FLAGS = ['XATTR_CREATE', 'XATTR_REPLACE']
+
+"""
     LTTng Trace Input/Output Plotter
 """
 
@@ -143,7 +153,7 @@ BYTES_RETS = ['read', 'write', 'lseek']
 # without close
 INPUT_PLOT_IGNORE = ['close']
 
-OUTPUT_SYSCALLS = ['open', 'truncate', 'mkdir', 'chmod', 'close', 'read', 'write', 'lseek', 'chdir']
+OUTPUT_SYSCALLS = ['open', 'truncate', 'mkdir', 'chmod', 'close', 'read', 'write', 'lseek', 'chdir', 'setxattr', 'getxattr']
 
 # 0 1 2 4 8 16 32 64 128 … 2^63, 2^64
 # len(BOUNDARIES) == 66

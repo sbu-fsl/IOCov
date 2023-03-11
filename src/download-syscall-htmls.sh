@@ -3,7 +3,7 @@
 # Run this script to get the html files of syscall man pages in order
 # to extract error codes for each system call
 
-SYSCALLS=("open" "openat2" "read" "write" "lseek" "llseek" "truncate" "mkdir" "chmod" "close" "close_range" "chdir")
+SYSCALLS=("open" "openat2" "read" "write" "lseek" "llseek" "truncate" "mkdir" "chmod" "close" "close_range" "chdir" "setxattr" "getxattr")
 
 mkdir -p ./Assets/Html-Files/
 

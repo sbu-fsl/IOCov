@@ -8,13 +8,17 @@ import os
 
 ALL_ERROR_CODES = list(errno.errorcode.values())
 
+# ./download-syscall-htmls.sh
+# python3 parse-html-error-codes.py
+
 # Key: must correspond to output coverage keys (i.e., meta-syscall)
 # Value: list of syscall names whose web manuals need to be extracted 
 #        and combine the system call error codes
 SYSCALLS_MANS = {'open': ['open', 'openat2'], 'read': ['read'], 'write': ['write'], 
                 'lseek': ['lseek', 'llseek'], 'truncate': ['truncate'], 
                 'mkdir': ['mkdir'], 'chmod': ['chmod'], 
-                'close': ['close', 'close_range'] , 'chdir': ['chdir']}
+                'close': ['close', 'close_range'] , 'chdir': ['chdir'], 
+                'setxattr': ['setxattr'], 'getxattr': ['getxattr']}
 
 errors_dict = {}
 

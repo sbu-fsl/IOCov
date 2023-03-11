@@ -93,7 +93,7 @@ if __name__ == "__main__":
     # Parse LTTng log files and save to pickle files
     parser.add_argument('--parse', default=False, action=argparse.BooleanOptionalAction)
     # If need parse, we need to provide the log path
-    parser.add_argument('-f','--filepath', default='mcfs-lttng-mcfs-ext4-256-chdir-fchdir-10m-601.log', type=str, help='Pathname to the LTTng log file')
+    parser.add_argument('-f','--filepath', default='mcfs-lttng-mcfs-ext4-256-xattrs-10m-601.log', type=str, help='Pathname to the LTTng log file')
     # Read the pickle files and save to json files
     parser.add_argument('--json', default=False, action=argparse.BooleanOptionalAction)
     # Need to plot input and/or output coverage
@@ -105,7 +105,7 @@ if __name__ == "__main__":
     # Directory to save plots
     parser.add_argument('-d','--plotdir', default=os.path.join(cwd, 'Assets'), type=str, help='Directory path to save plots')
     # Plot title
-    parser.add_argument('-t','--plottitle', default='xfstests_all_tests_Ext4', type=str, help='Title of all plots')
+    parser.add_argument('-t','--plottitle', default='xattr_mcfs_10m', type=str, help='Title of all plots')
     # Plot unfilter
     parser.add_argument('--plotunfilter', default=False, action=argparse.BooleanOptionalAction)
     # Plot input coverage only

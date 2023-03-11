@@ -107,7 +107,8 @@ class TracePlotter:
                 # lseek: whence
                 # mkdir: mode
                 # chmod: mode
-                if sc == 'open' or (sc == 'lseek' and param == 'whence') or sc == 'mkdir' or sc == 'chmod':
+                # setxattr: flags
+                if sc == 'open' or (sc == 'lseek' and param == 'whence') or sc == 'mkdir' or sc == 'chmod' or (sc == 'setxattr' and param == 'flags'):
                     for each_arg, each_cnt in sorted(input_cov[sc][param].items()):
                         if param == 'mode':
                             input_coords[sc][param]['X-axis'].append(oct(each_arg))
@@ -119,7 +120,8 @@ class TracePlotter:
                 # read/write: count, offset
                 # lseek: offset
                 # truncate: length
-                elif sc == 'read' or sc == 'write' or (sc == 'lseek' and param == 'offset') or sc == 'truncate':
+                # setxattr/getxattr: size
+                elif sc == 'read' or sc == 'write' or (sc == 'lseek' and param == 'offset') or sc == 'truncate' or (sc == 'setxattr' and param == 'size') or sc == 'getxattr':
                     input_coords[sc][param]['X-axis'] = self.bytes_log2_xaxis.copy()
                     input_coords[sc][param]['Y-axis'] = self.bytes_yaxis.copy()
 
@@ -168,13 +170,13 @@ class TracePlotter:
                 # print('{} {} yaxis: {}'.format(sc, param, yaxis))
                 y_label = 'Count of Parameter (log scale)'
                 x_label = 'Parameter'
-                if sc == 'open' or (sc == 'lseek' and param == 'whence') or sc == 'mkdir' or sc == 'chmod':
+                if sc == 'open' or (sc == 'lseek' and param == 'whence') or sc == 'mkdir' or sc == 'chmod' or (sc == 'setxattr' and param == 'flags'):
                     x_label = '{} parameter: {}'.format(sc, param)
                     fig, ax = plt.subplots(figsize=(8, 8))
                     if sc == 'chmod':
                         fig, ax = plt.subplots(figsize=(20, 20))
                     # Handle unfiltered input coverage
-                    if (sc == 'open' and param == 'flags') or (sc == 'lseek' and param == 'whence'):
+                    if (sc == 'open' and param == 'flags') or (sc == 'lseek' and param == 'whence') or (sc == 'setxattr' and param == 'flags'):
                         ax.barh(xaxis, yaxis, log=True, color ='maroon')
                         if self.plot_unfilter:
                             yaxis_diff = [a - b for a, b in zip(unfilter_yaxis, yaxis)]
@@ -205,7 +207,7 @@ class TracePlotter:
                         'input-{}-{}.{}'.format(sc, param, self.plot_format)), 
                         bbox_inches='tight',dpi=self.plot_dpi)
                     plt.close('all')
-                elif sc == 'read' or sc == 'write' or (sc == 'lseek' and param == 'offset') or sc == 'truncate':
+                elif sc == 'read' or sc == 'write' or (sc == 'lseek' and param == 'offset') or sc == 'truncate' or ((sc == 'setxattr' or sc == 'getxattr') and param == 'size'):
                     x_label = '{} parameter: {}'.format(sc, param)
                     fig, ax = plt.subplots(figsize=(8, 8))
                     y_pos = np.arange(len(xaxis))

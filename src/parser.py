@@ -693,15 +693,12 @@ class TraceParser:
             flags_list = find_number(line, 'flags = ')
             if flags_list:
                 flags_int = int(flags_list[0])
-                if flags_int in self.unfilter_input_cov[scname]['flags'].keys():
-                    self.unfilter_input_cov[scname]['flags'][flags_int] += 1
-                else:
-                    self.unfilter_input_cov[scname]['flags'][flags_int] = 1
+                self.unfilter_input_cov[scname]['flags'][SETXATTR_FLAGS_NUMS[flags_int]] += 1
             else:
                 sys.exit('INPUT: {}/fsetxattr - no flags error'.format(scname))            
 
             if 'syscall_entry_setxattr:' in line or 'syscall_entry_lsetxattr:' in line:
-                fn_list = find_testing_filename(line, 'path = ')
+                fn_list = find_testing_filename(line, 'pathname = ')
                 if fn_list:
                     self.valid_setxattr = True
                     if size_int in self.input_cov[scname]['size'].keys():
@@ -709,10 +706,7 @@ class TraceParser:
                     else:
                         self.input_cov[scname]['size'][size_int] = 1
 
-                    if flags_int in self.input_cov[scname]['flags'].keys():
-                        self.input_cov[scname]['flags'][flags_int] += 1
-                    else:
-                        self.input_cov[scname]['flags'][flags_int] = 1                    
+                    self.input_cov[scname]['flags'][SETXATTR_FLAGS_NUMS[flags_int]] += 1                   
                 else:
                     self.valid_setxattr = False                                    
             elif 'syscall_entry_fsetxattr:' in line:
@@ -776,7 +770,7 @@ class TraceParser:
                 sys.exit('INPUT: {}/fgetxattr - no size error'.format(scname))         
 
             if 'syscall_entry_getxattr:' in line or 'syscall_entry_lgetxattr:' in line:
-                fn_list = find_testing_filename(line, 'path = ')
+                fn_list = find_testing_filename(line, 'pathname = ')
                 if fn_list:
                     self.valid_getxattr = True
                     if size_int in self.input_cov[scname]['size'].keys():
