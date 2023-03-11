@@ -101,7 +101,7 @@ if __name__ == "__main__":
     # Whether it is MCFS, which needs special handling for better accuracy (e.g., handle abstract state system calls)
     parser.add_argument('--mcfs', default=True, action=argparse.BooleanOptionalAction)
     # Suffix for the pkl and json file names 
-    parser.add_argument('-s','--suffix', default='mcfs_10m', type=str, help='the suffix of output file names')
+    parser.add_argument('-s','--suffix', default='xattr_mcfs_10m', type=str, help='the suffix of output file names')
     # Directory to save plots
     parser.add_argument('-d','--plotdir', default=os.path.join(cwd, 'Assets'), type=str, help='Directory path to save plots')
     # Plot title

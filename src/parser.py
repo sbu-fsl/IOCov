@@ -73,6 +73,10 @@ class TraceParser:
         self.valid_chmod = False # chmod fchmodat
         self.valid_fchmod = False # fchmod
         self.valid_chdir = False # chdir/fchdir
+        self.valid_setxattr = False 
+        self.valid_fsetxattr = False 
+        self.valid_getxattr = False
+        self.valid_fgetxattr = False
         self.ongoing_valid_open_write = False 
         self.ongoing_valid_open_offset = False 
         self.is_mcfs_write_flags = False
@@ -671,6 +675,96 @@ class TraceParser:
             else:
                 self.valid_cwd = False
 
+    def handle_setxattr(self, scname, line, is_input):
+        size_int = -1
+        flags_int = -1
+        # setxattr/lsetxattr/fsetxattr input
+        if is_input:
+            size_list = find_number(line, 'size = ')
+            if size_list:
+                size_int = int(size_list[0])
+                if size_int in self.unfilter_input_cov[scname]['size'].keys():
+                    self.unfilter_input_cov[scname]['size'][size_int] += 1
+                else:
+                    self.unfilter_input_cov[scname]['size'][size_int] = 1
+            else:
+                sys.exit('INPUT: {}/fsetxattr - no size error'.format(scname))
+            
+            flags_list = find_number(line, 'flags = ')
+            if flags_list:
+                flags_int = int(flags_list[0])
+                if flags_int in self.unfilter_input_cov[scname]['flags'].keys():
+                    self.unfilter_input_cov[scname]['flags'][flags_int] += 1
+                else:
+                    self.unfilter_input_cov[scname]['flags'][flags_int] = 1
+            else:
+                sys.exit('INPUT: {}/fsetxattr - no flags error'.format(scname))            
+
+            if 'syscall_entry_setxattr:' in line or 'syscall_entry_lsetxattr:' in line:
+                fn_list = find_testing_filename(line, 'path = ')
+                if fn_list:
+                    self.valid_setxattr = True
+                    if size_int in self.input_cov[scname]['size'].keys():
+                        self.input_cov[scname]['size'][size_int] += 1
+                    else:
+                        self.input_cov[scname]['size'][size_int] = 1
+
+                    if flags_int in self.input_cov[scname]['flags'].keys():
+                        self.input_cov[scname]['flags'][flags_int] += 1
+                    else:
+                        self.input_cov[scname]['flags'][flags_int] = 1                    
+                else:
+                    self.valid_setxattr = False                                    
+            elif 'syscall_entry_fsetxattr:' in line:
+                fd_list = find_number(line, 'fd = ')
+                if fd_list:
+                    fd_int = int(fd_list[0])
+                    if fd_int in self.valid_fds:
+                        self.valid_fsetxattr = True
+                        if size_int in self.input_cov[scname]['size'].keys():
+                            self.input_cov[scname]['size'][size_int] += 1
+                        else:
+                            self.input_cov[scname]['size'][size_int] = 1
+
+                        if flags_int in self.input_cov[scname]['flags'].keys():
+                            self.input_cov[scname]['flags'][flags_int] += 1
+                        else:
+                            self.input_cov[scname]['flags'][flags_int] = 1 
+                    else:
+                        self.valid_fsetxattr = False
+            else:
+                sys.exit('INPUT: {}/fsetxattr line error'.format(scname))
+        # setxattr/lsetxattr/fsetxattr output
+        else:
+            if 'syscall_exit_setxattr:' in line or 'syscall_exit_lsetxattr:' in line:
+                if self.valid_setxattr:
+                    ret_list = find_number(line, 'ret = ')
+                    if ret_list:
+                        ret_num = int(ret_list[0])
+                        if ret_num in self.output_cov[scname].keys():
+                            self.output_cov[scname][ret_num] += 1
+                        else:
+                            self.output_cov[scname][ret_num] = 1
+                    else:
+                        sys.exit('OUTPUT: setxattr - no ret error')
+            elif 'syscall_exit_fsetxattr:' in line:
+                if self.valid_fsetxattr:
+                    ret_list = find_number(line, 'ret = ')
+                    if ret_list:
+                        ret_num = int(ret_list[0])
+                        if ret_num in self.output_cov[scname].keys():
+                            self.output_cov[scname][ret_num] += 1
+                        else:
+                            self.output_cov[scname][ret_num] = 1 
+                    else:
+                        sys.exit('OUTPUT: fsetxattr - no ret error')          
+            else:
+                sys.exit('OUTPUT: {}/fsetxattr line error'.format(scname))        
+
+
+
+
+
     def cal_input_output_cov(self):
         with open(self.path, 'r', encoding="utf8", errors='ignore') as file:
             lines = file.readlines()
@@ -695,6 +789,10 @@ class TraceParser:
                         self.handle_close('close', line, True)
                     elif INPUT_PREFIX + 'chdir' in line or INPUT_PREFIX + 'fchdir' in line:
                         self.handle_chdir('chdir', line, True)
+                    elif INPUT_PREFIX + 'setxattr' in line or INPUT_PREFIX + 'lsetxattr' in line or INPUT_PREFIX + 'fsetxattr' in line:
+                        self.handle_setxattr('setxattr', line, True)
+                    elif INPUT_PREFIX + 'getxattr' in line or INPUT_PREFIX + 'lgetxattr' in line or INPUT_PREFIX + 'fgetxattr' in line:
+                        self.handle_getxattr('getxattr', line, True)
                     else:
                         sys.exit('Unrecognized syscall with INPUT_PREFIX')
                 # Output (syscall_exit_*)
@@ -717,6 +815,10 @@ class TraceParser:
                         self.handle_close('close', line, False)
                     elif OUTPUT_PREFIX + 'chdir' in line or OUTPUT_PREFIX + 'fchdir' in line:
                         self.handle_chdir('chdir', line, False)
+                    elif OUTPUT_PREFIX + 'setxattr' in line or OUTPUT_PREFIX + 'lsetxattr' in line or OUTPUT_PREFIX + 'fsetxattr' in line:
+                        self.handle_setxattr('setxattr', line, False)
+                    elif OUTPUT_PREFIX + 'getxattr' in line or OUTPUT_PREFIX + 'lgetxattr' in line or OUTPUT_PREFIX + 'fgetxattr' in line:
+                        self.handle_getxattr('getxattr', line, False)
                     else:
                         sys.exit('Unrecognized syscall with OUTPUT_PREFIX')                     
                 else:

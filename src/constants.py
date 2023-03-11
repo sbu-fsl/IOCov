@@ -17,7 +17,9 @@ SYSCALLS = {
     'mkdir': ['mkdir', 'mkdirat'],
     'chmod': ['chmod', 'fchmod', 'fchmodat'],
     'close': ['close', 'close_range'], # No input coverage for close()
-    'chdir': ['chdir', 'fchdir'] # No input coverage for chdir()
+    'chdir': ['chdir', 'fchdir'], # No input coverage for chdir()
+    'setxattr': ['setxattr', 'lsetxattr', 'fsetxattr'],
+    'getxattr': ['getxattr', 'lgetxattr', 'fgetxattr']
 }
 
 INPUT_SYSCALLS = {
@@ -27,7 +29,9 @@ INPUT_SYSCALLS = {
     'lseek': ['lseek', 'llseek'],
     'truncate': ['truncate', 'ftruncate'],
     'mkdir': ['mkdir', 'mkdirat'],
-    'chmod': ['chmod', 'fchmod', 'fchmodat']
+    'chmod': ['chmod', 'fchmod', 'fchmodat'],
+    'setxattr': ['setxattr', 'lsetxattr', 'fsetxattr'],
+    'getxattr': ['getxattr', 'lgetxattr', 'fgetxattr']
 }
 
 # Ignore close()/chdir[] here because we don't measure input cov for them 
@@ -40,7 +44,9 @@ SYSCALL_ARGS = {
     'mkdir': ['mode'],
     'chmod': ['mode'],
     'close': [],
-    'chdir': []
+    'chdir': [],
+    'setxattr': ['size', 'flags'], 
+    'getxattr': ['size']
 }
 
 INPUT_PREFIX='syscall_entry_'
@@ -158,7 +164,9 @@ SC_COUNT_ARGS = {'open': 'mode',
             'lseek': 'whence',
             'truncate': 'length',
             'mkdir': 'mode',
-            'chmod': 'mode'
+            'chmod': 'mode',
+            'setxattr': 'size',
+            'getxattr': 'size'
             }
 
 # MCFS Specific
@@ -170,7 +178,9 @@ MCFS_SYSCALLS = {
     'write_file': ['open', 'lseek', 'write'], # 'close'
     'truncate': ['truncate'],
     'mkdir': ['mkdir'],
-    'chmod': ['chmod']
+    'chmod': ['chmod'],
+    'setxattr': ['setxattr'],
+    'getxattr': ['getxattr']
 }
 
 MCFS_WRITE_SIZE = [0,
