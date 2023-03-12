@@ -3,7 +3,7 @@
 # Run this script with sudo
 
 FS="ext4"
-OPTION="seq1"
+OPTION="allrecur"
 
 CRASHMONKEY_DIR="/newdisk/yifei/crashmonkey-20230113/crashmonkey"
 
@@ -21,6 +21,7 @@ SUFFIX="${SUFFIX}${FS}-${OPTION}"
 SCPARAM="${SCPARAM::-1}"
 
 cd $CRASHMONKEY_DIR
+# rm -rf diff_results 
 
 lttng create my-kernel-session-${SUFFIX} --output=/tmp/my-kernel-trace-${SUFFIX}
 
@@ -31,7 +32,17 @@ start=`date +%s`
 lttng start
 
 # Run crashmonkey here
-python xfsMonkey.py -f /dev/sda -d /dev/cow_ram0 -t $FS -e 102400 -u build/tests/${OPTION}/ > outfile_${FS}_${OPTION}
+python xfsMonkey.py -f /dev/sda -d /dev/cow_ram0 -t $FS -e 102400 -u build/tests/ > outfile_${FS}_${OPTION}
+mv diff_results diff_results_tests
+mv outfile_${FS}_${OPTION} outfile_${FS}_${OPTION}_tests
+
+python xfsMonkey.py -f /dev/sda -d /dev/cow_ram0 -t $FS -e 102400 -u build/tests/seq1/ > outfile_${FS}_${OPTION}
+mv diff_results diff_results_seq1
+mv outfile_${FS}_${OPTION} outfile_${FS}_${OPTION}_seq1
+
+python xfsMonkey.py -f /dev/sda -d /dev/cow_ram0 -t $FS -e 102400 -u build/tests/generic_042/ > outfile_${FS}_${OPTION}
+mv diff_results diff_results_generic_042
+mv outfile_${FS}_${OPTION} outfile_${FS}_${OPTION}_generic_042
 
 lttng stop
 
