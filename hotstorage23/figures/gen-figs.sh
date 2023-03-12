@@ -9,6 +9,8 @@
 # Then update this script.  Add new entries here to extract more figs.  Then
 # run this script.
 
+# Run by "bash gen-figs.sh"
+
 SRC="FMITF-NFS-HotOS2021-Figures.pdf"
 
 # ARGS: pagenum fig-name-you-want.pdf
@@ -24,12 +26,11 @@ function get1fig
 if test -f "${HOME}/Downloads/$SRC" ; then
     mv -v "${HOME}/Downloads/$SRC" .
 fi
-# model checking high level arch figure
-get1fig 1 mc-framework.pdf
-# problems we discovered trying to MC file systems figure
-get1fig 2 filesystems-workflow.pdf
-# verifs arch fig
-get1fig 3 verifs-architecture.pdf
+
+# IOCov Architecture figure
+get1fig 13 iocov-framework.pdf
+# IOCov Bug Example Figure
+get1fig 14 bug-example.pdf
 
 # cleanup
 rm -f temp.pdf
