@@ -75,7 +75,8 @@ class TracePlotter:
         self.input_dir = 'Input-Figures'
         self.output_dir = 'Output-Figures'
         self.plot_dpi = 600
-        self.plot_title = plot_title
+        self.plot_prefix = plot_title
+        self.plot_title = plot_title.replace('_', ' ')
         self.plot_unfilter = plot_unfilter
         self.input_cov = input_cov
         self.output_cov = output_cov
@@ -204,7 +205,7 @@ class TracePlotter:
                     plt.ylabel(x_label)
                     plt.title('Input coverage for {} {} with {}'.format(sc, param, self.plot_title))
                     plt.savefig(os.path.join(self.plot_dir, self.input_dir, 
-                        'input-{}-{}.{}'.format(sc, param, self.plot_format)), 
+                        '{}-input-{}-{}.{}'.format(self.plot_prefix, sc, param, self.plot_format)), 
                         bbox_inches='tight',dpi=self.plot_dpi)
                     plt.close('all')
                 elif sc == 'read' or sc == 'write' or (sc == 'lseek' and param == 'offset') or sc == 'truncate' or ((sc == 'setxattr' or sc == 'getxattr') and param == 'size'):
@@ -227,7 +228,7 @@ class TracePlotter:
                     plt.ylabel(x_label)
                     plt.title('Input coverage for {} {} with {}'.format(sc, param, self.plot_title))
                     plt.savefig(os.path.join(self.plot_dir, self.input_dir, 
-                        'input-{}-{}.{}'.format(sc, param, self.plot_format)), 
+                        '{}-input-{}-{}.{}'.format(self.plot_prefix, sc, param, self.plot_format)), 
                         bbox_inches='tight',dpi=self.plot_dpi)
                     plt.close('all')
                 else:
@@ -273,7 +274,7 @@ class TracePlotter:
             plt.ylabel(x_label)
             plt.title('Output coverage for {} with {}'.format(sc, self.plot_title))
             plt.savefig(os.path.join(self.plot_dir, self.output_dir, 
-                        'output-{}.{}'.format(sc, self.plot_format)), 
+                        '{}-output-{}.{}'.format(self.plot_prefix, sc, self.plot_format)), 
                         bbox_inches='tight',dpi=self.plot_dpi)
             plt.close('all')
 

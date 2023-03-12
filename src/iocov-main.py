@@ -63,7 +63,7 @@ def main(args):
             plot_dir = args.plotdir
             plot_title =  args.plottitle
             plot_unfilter = args.plotunfilter
-            tplot = TracePlotter(plot_dir, plot_title.replace('_', ' '), plot_unfilter, input_cov, output_cov, unfilter_input_cov)
+            tplot = TracePlotter(plot_dir, plot_title, plot_unfilter, input_cov, output_cov, unfilter_input_cov)
             if input_only:
                 tplot.plot_inputs()
             if output_only:
@@ -93,7 +93,7 @@ if __name__ == "__main__":
     # Parse LTTng log files and save to pickle files
     parser.add_argument('--parse', default=False, action=argparse.BooleanOptionalAction)
     # If need parse, we need to provide the log path
-    parser.add_argument('-f','--filepath', default='mcfs-lttng-mcfs-ext4-256-xattrs-10m-601.log', type=str, help='Pathname to the LTTng log file')
+    parser.add_argument('-f','--filepath', default='xfstests-lttng-all-related-ext4-all-xattrs-4633.log', type=str, help='Pathname to the LTTng log file')
     # Read the pickle files and save to json files
     parser.add_argument('--json', default=False, action=argparse.BooleanOptionalAction)
     # Need to plot input and/or output coverage
@@ -101,11 +101,11 @@ if __name__ == "__main__":
     # Whether it is MCFS, which needs special handling for better accuracy (e.g., handle abstract state system calls)
     parser.add_argument('--mcfs', default=True, action=argparse.BooleanOptionalAction)
     # Suffix for the pkl and json file names 
-    parser.add_argument('-s','--suffix', default='xattr_mcfs_10m', type=str, help='the suffix of output file names')
+    parser.add_argument('-s','--suffix', default='all_xfstests_xattrs', type=str, help='the suffix of output file names')
     # Directory to save plots
     parser.add_argument('-d','--plotdir', default=os.path.join(cwd, 'Assets'), type=str, help='Directory path to save plots')
     # Plot title
-    parser.add_argument('-t','--plottitle', default='xattr_mcfs_10m', type=str, help='Title of all plots')
+    parser.add_argument('-t','--plottitle', default='all_xfstests_xattrs', type=str, help='Title of all plots')
     # Plot unfilter
     parser.add_argument('--plotunfilter', default=False, action=argparse.BooleanOptionalAction)
     # Plot input coverage only
