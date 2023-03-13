@@ -28,8 +28,9 @@ def find_mcfs_filename(text, c):
 def find_crashmonkey_filename(text, c):
     return re.findall(r'%s(\"/mnt/snapshot.*\")' % c, text)
 
+# Use find_mcfs_filename for MCFS
 def find_testing_filename(text, c):
-    return find_mcfs_name(text, c)
+    return find_mcfs_filename(text, c)
 
 # Does not collect input coverage for close()
 def init_input_cov():
