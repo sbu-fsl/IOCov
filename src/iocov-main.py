@@ -96,9 +96,9 @@ if __name__ == "__main__":
     # default_is_mcfs = False
     # default_lttng_log = 'crashmonkey-lttng-ext4-allrecur-614.log'
 
-    default_plot_name = 'mcfs_10m'
-    default_is_mcfs = True
-    default_lttng_log = 'mcfs-lttng-mcfs-ext4-256-xattrs-10m-601.log'
+    default_plot_name = 'xfstests_xattr_open_dump'
+    default_is_mcfs = False
+    default_lttng_log = 'xfstests-lttng-all-related-ext4-all-xattrs-4633.log'
 
     parser = argparse.ArgumentParser()
     # Need Python 3.9+

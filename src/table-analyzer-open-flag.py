@@ -74,7 +74,9 @@ for i in range(len(res_list)):
         patches, all_labels, dummy =  zip(*sorted(zip(patches, all_labels, y_all),
                                             key=lambda x: x[2],
                                             reverse=True))
-
+    if title_list[i] == 'all':
+        print('patches: ', patches)
+        print('all_labels: ', all_labels)
     plt.legend(patches, all_labels, loc='best', bbox_to_anchor=(-0.1, 1.),
             fontsize=8)
 

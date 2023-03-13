@@ -8,11 +8,11 @@ import pickle
 open_flag_unfilter = {}
 open_flag_filtered = {}
 # If create open_flag_unfilter and open_flag_filtered
-GET_FLAGS = False
+GET_FLAGS = True
 # Investigate open distributions (number of open/openat/openat2/creat)
 # Save the selected open lines to a file
 OPEN_VARS = SYSCALLS['open']
-OPEN_DUMP = False
+OPEN_DUMP = True
 open_var_count = {}
 if OPEN_DUMP:
     for open_var in OPEN_VARS:
