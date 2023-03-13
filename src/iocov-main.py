@@ -74,6 +74,9 @@ def main(args):
 
 if __name__ == "__main__":
     cwd = os.getcwd()
+    """
+        IMPORTANT: Need to edit find_testing_filename AND default_plot_name AND default_is_mcfs
+    """
     # Handle Arguments
     # Example commands:
     ## Parse LTTng logs and get pickle files for input/output cov only
@@ -88,6 +91,9 @@ if __name__ == "__main__":
     #### python3 iocov-main.py --no-parse --plot -i
     ## Plot output coverage only
     #### python3 iocov-main.py --no-parse --plot -o
+    default_plot_name = 'all_xfstests_xattrs'
+    default_is_mcfs = False
+
     parser = argparse.ArgumentParser()
     # Need Python 3.9+
     # Parse LTTng log files and save to pickle files
@@ -99,13 +105,13 @@ if __name__ == "__main__":
     # Need to plot input and/or output coverage
     parser.add_argument('--plot', default=False, action=argparse.BooleanOptionalAction)
     # Whether it is MCFS, which needs special handling for better accuracy (e.g., handle abstract state system calls)
-    parser.add_argument('--mcfs', default=True, action=argparse.BooleanOptionalAction)
+    parser.add_argument('--mcfs', default=default_is_mcfs, action=argparse.BooleanOptionalAction)
     # Suffix for the pkl and json file names 
-    parser.add_argument('-s','--suffix', default='all_xfstests_xattrs', type=str, help='the suffix of output file names')
+    parser.add_argument('-s','--suffix', default=default_plot_name, type=str, help='the suffix of output file names')
     # Directory to save plots
     parser.add_argument('-d','--plotdir', default=os.path.join(cwd, 'Assets'), type=str, help='Directory path to save plots')
     # Plot title
-    parser.add_argument('-t','--plottitle', default='all_xfstests_xattrs', type=str, help='Title of all plots')
+    parser.add_argument('-t','--plottitle', default=default_plot_name, type=str, help='Title of all plots')
     # Plot unfilter
     parser.add_argument('--plotunfilter', default=False, action=argparse.BooleanOptionalAction)
     # Plot input coverage only
