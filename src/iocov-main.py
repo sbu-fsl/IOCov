@@ -75,7 +75,7 @@ def main(args):
 if __name__ == "__main__":
     cwd = os.getcwd()
     """
-        IMPORTANT: Need to edit find_testing_filename AND default_plot_name AND default_is_mcfs
+        IMPORTANT: Need to edit find_testing_filename AND default_lttng_log path AND default_plot_name AND default_is_mcfs
     """
     # Handle Arguments
     # Example commands:
@@ -91,15 +91,21 @@ if __name__ == "__main__":
     #### python3 iocov-main.py --no-parse --plot -i
     ## Plot output coverage only
     #### python3 iocov-main.py --no-parse --plot -o
-    default_plot_name = 'all_xfstests_xattrs'
-    default_is_mcfs = False
+    
+    # default_plot_name = 'crashmonkey'
+    # default_is_mcfs = False
+    # default_lttng_log = 'crashmonkey-lttng-ext4-allrecur-614.log'
+
+    default_plot_name = 'mcfs_10m'
+    default_is_mcfs = True
+    default_lttng_log = 'mcfs-lttng-mcfs-ext4-256-xattrs-10m-601.log'
 
     parser = argparse.ArgumentParser()
     # Need Python 3.9+
     # Parse LTTng log files and save to pickle files
     parser.add_argument('--parse', default=False, action=argparse.BooleanOptionalAction)
     # If need parse, we need to provide the log path
-    parser.add_argument('-f','--filepath', default='xfstests-lttng-all-related-ext4-all-xattrs-4633.log', type=str, help='Pathname to the LTTng log file')
+    parser.add_argument('-f','--filepath', default=default_lttng_log, type=str, help='Pathname to the LTTng log file')
     # Read the pickle files and save to json files
     parser.add_argument('--json', default=False, action=argparse.BooleanOptionalAction)
     # Need to plot input and/or output coverage
