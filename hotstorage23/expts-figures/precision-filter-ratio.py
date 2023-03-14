@@ -42,11 +42,13 @@ ax2.bar(x_labels, data2_filter_ratio)
 
 fig.subplots_adjust(wspace=0.3)
 # ax1.set_title('Precision')
+ax1.yaxis.grid(True)
 ax1.set_xlabel('System Calls')
 ax1.set_ylabel('Filter Precision (%)')
 
 # ax2.set_title('Filter Ratio')
 ax2.set_yscale('log')
+ax2.yaxis.grid(True)
 
 ax2.set_xlabel('System Calls')
 ax2.set_ylabel('Filter Ratio (log scale)')
