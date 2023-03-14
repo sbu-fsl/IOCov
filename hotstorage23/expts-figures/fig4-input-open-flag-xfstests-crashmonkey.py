@@ -7,7 +7,8 @@ import pickle
 
 plt.rcParams["font.family"] = "Times New Roman"
 
-pkl_dir = '/mcfs2/LTTng-xfstests-2022-1211/IOCov/src'
+# pkl_dir = '/mcfs2/LTTng-xfstests-2022-1211/IOCov/src'
+pkl_dir = os.getcwd()
 
 fig4_xfstests_input = {}
 fig4_crashmonkey_input = {}
@@ -24,7 +25,6 @@ fig4_crashmonkey_open_flags = fig4_crashmonkey_input['open']['flags']
 
 # print('fig4_xfstests_open_flags: ', fig4_xfstests_open_flags)
 # print('fig4_crashmonkey_open_flags: ', fig4_crashmonkey_open_flags)
-
 
 data1_xfstests = []
 data2_crashmonkey = []
