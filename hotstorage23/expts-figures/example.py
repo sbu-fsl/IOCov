@@ -1,26 +1,26 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-# create some data
-categories_all = np.array(['A', 'B', 'C', 'D', 'E'])
-values_all = np.array([10, 24, 36, 45, 21])
+# Create the data for the horizontal bar chart
+y = np.array(['A', 'B', 'C', 'D', 'E'])
+x = np.array([10, 15, 20, 25, 30])
 
-categories_subset = np.array(['A', 'C', 'E'])
-values_subset = np.array([12, 28, 18])
+# Create the horizontal bar chart
+fig, ax = plt.subplots()
+ax.barh(y, x)
 
-# create a bar plot for the larger set
-plt.bar(categories_all, values_all, color='blue', alpha=0.5)
+# Set the arrow
+arrow_index = 2
+arrow_x = x[arrow_index]
+arrow_y = y[arrow_index]
+arrow_text = f'Bar {arrow_index+1}'
+ax.annotate(arrow_text, xy=(arrow_x, arrow_y), xytext=(arrow_x+5, arrow_y),
+             arrowprops=dict(facecolor='red', arrowstyle='->'))
 
-# create a bar plot for the smaller set
-plt.bar(categories_subset, values_subset, color='red')
+# Add labels and titles
+ax.set_xlabel('Value')
+ax.set_ylabel('Category')
+ax.set_title('Horizontal Bar Chart')
 
-# set the x and y axis labels
-plt.xlabel('Categories')
-plt.ylabel('Values')
-
-# set the plot title
-plt.title('Bar Plot with Subset Highlighted')
-
-
-# Show the plot
-plt.savefig('example.pdf', format='pdf', bbox_inches='tight')
+# Save the chart as a vector PDF file
+fig.savefig('example.pdf', format='pdf', bbox_inches='tight')

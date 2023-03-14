@@ -14,10 +14,10 @@ fig4_xfstests_input = {}
 fig4_crashmonkey_input = {}
 dpi_val = 600
 
-with open(os.path.join(pkl_dir, 'input_cov_all_xfstests_xattrs.pkl'), 'rb') as f:
+with open(os.path.join(pkl_dir, 'fig4_input_cov_all_xfstests_xattrs.pkl'), 'rb') as f:
     fig4_xfstests_input = pickle.load(f)
 
-with open(os.path.join(pkl_dir, 'input_cov_crashmonkey.pkl'), 'rb') as f:
+with open(os.path.join(pkl_dir, 'fig4_input_cov_crashmonkey.pkl'), 'rb') as f:
     fig4_crashmonkey_input = pickle.load(f)
 
 fig4_xfstests_open_flags = fig4_xfstests_input['open']['flags']
@@ -55,22 +55,24 @@ ax.set_xscale('log')
 # xtick_values = [1, 10, 100, 1000, 10000, 100000, 1000000, 10000000]
 # xtick_labels = ['1', '10', '100', '1000', '10000', '100000', '1000000', '10000000']
 
-xtick_values = [1, 10, 100, 1000, 10000, 100000, 1000000, 10000000]
+xtick_values = [0.1, 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000]
 # xtick_labels = ['0', '1', '2', '3 (1K)', '4', '5', '6 (1M)', '7 (10M)']
-xtick_labels = ['1', '10', '100', '1K', '10K', '100K', '1M', '10M']
+xtick_labels = ['0', '1', '10', '100', '1K', '10K', '100K', '1M', '10M']
 
 plt.xticks(xtick_values, xtick_labels)
 
 ax.set_xlim(xmin = 0.1)
 
 # Create the stacked bar chart
-ax.barh(x_labels, data[0], color='green', label='CrashMonkey')
-ax.barh(x_labels, data[1], color='orange', left=data[0], hatch='///', label='xfstests')
+# 'green' 'orange'
+ax.barh(x_labels, data[0], color='#4daf4a', label='CrashMonkey')
+ax.barh(x_labels, data[1], color='#ff7f0e', left=data[0], hatch='////', label='xfstests')
+
 
 # Add a title and axis labels
 # ax.set_title('Stacked Bar Chart')
-ax.set_xlabel('Frequency (log scale based 10)')
-ax.set_ylabel('Open Flags')
+ax.set_xlabel('Frequency (log scale base 10)', fontweight='bold')
+ax.set_ylabel('Open Flags', fontweight='bold')
 
 # Add a legend
 ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=len(labels))

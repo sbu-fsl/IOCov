@@ -9,6 +9,8 @@ import numpy as np
 import pickle
 import errno
 
+DUMP_AXIS_FOR_FIG = True
+
 # len(bytes_xaxis) == 129
 def produce_bytes_axes():
     bytes_xaxis = []
@@ -158,6 +160,9 @@ class TracePlotter:
     def plot_input_cov(self):
         # Popluate both input coords
         self.input_coords = self.populate_input_coords(self.input_cov)
+        if DUMP_AXIS_FOR_FIG:
+            with open(self.plot_prefix + '_input_coords.pkl', 'wb') as f:
+                pickle.dump(self.input_coords, f)
         self.unfilter_input_coords = self.populate_input_coords(self.unfilter_input_cov)
         for sc in self.input_cov.keys():
             for param in SYSCALL_ARGS[sc]:
@@ -261,6 +266,9 @@ class TracePlotter:
 
     def plot_output_cov(self):
         self.output_coords = self.populate_output_coords()
+        if DUMP_AXIS_FOR_FIG:
+            with open(self.plot_prefix + '_output_coords.pkl', 'wb') as f:
+                pickle.dump(self.output_coords, f)    
         for sc in self.output_cov.keys():
             xaxis = self.output_coords[sc]['X-axis']
             yaxis = self.output_coords[sc]['Y-axis']
