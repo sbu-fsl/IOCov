@@ -99,11 +99,30 @@ def safe_log(x):
     else:
         return 0
 
-data1_xfstests = [safe_log(x) for x in data1_xfstests]
-data2_crashmonkey = [safe_log(x) for x in data2_crashmonkey]
+def min_max_normalize(lst):
+    min_val = min(lst)
+    max_val = max(lst)
+    normalized_lst = [(x - min_val) / (max_val - min_val) for x in lst]
+    return normalized_lst
 
-xfstests_avg = statistics.mean(data1_xfstests)
-crashmonkey_avg = statistics.mean(data2_crashmonkey)
+def safe_geometric_mean(numbers):
+    product = 1
+    for num in numbers:
+        if num != 0:
+            product *= num
+    return pow(product, 1/len(numbers))
+
+data1_xfstests = min_max_normalize(data1_xfstests)
+data2_crashmonkey = min_max_normalize(data2_crashmonkey)
+
+# data1_xfstests = [safe_log(x) for x in data1_xfstests]
+# data2_crashmonkey = [safe_log(x) for x in data2_crashmonkey]
+
+# xfstests_avg = statistics.mean(data1_xfstests)
+# crashmonkey_avg = statistics.mean(data2_crashmonkey)
+
+xfstests_avg = safe_geometric_mean(data1_xfstests)
+crashmonkey_avg = safe_geometric_mean(data2_crashmonkey)
 
 xfstests_avg_list = [xfstests_avg] * len(data1_xfstests)
 crashmonkey_avg_list = [crashmonkey_avg] * len(data2_crashmonkey)
