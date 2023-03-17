@@ -78,7 +78,8 @@ ax.set_xlabel('Frequency (log scale base 10)', fontweight='bold')
 ax.set_ylabel('Open Flags', fontweight='bold')
 
 # Add a legend
-ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=len(labels))
+# ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=len(labels))
+ax.legend(loc='best', ncol=len(labels))
 
 # Adjust the plot layout
 plt.tight_layout()

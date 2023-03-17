@@ -90,7 +90,8 @@ ax.set_xlim(xmin = 0.1)
 ax.set_xlabel('Frequency (log scale base 10)', fontweight='bold')
 ax.set_ylabel('Open Return Code or Error', fontweight='bold')
 
-ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=len(labels))
+# ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=len(labels))
+ax.legend(loc='best', ncol=len(labels))
 
 plt.tight_layout()
 
