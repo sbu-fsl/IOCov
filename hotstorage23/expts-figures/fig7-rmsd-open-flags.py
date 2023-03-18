@@ -5,6 +5,10 @@ import numpy as np
 import os
 import pickle
 import math
+import matplotlib as mpl
+
+# Set the font size globally
+mpl.rcParams['font.size'] = 5
 
 plt.rcParams["font.family"] = "Times New Roman"
 
@@ -76,6 +80,7 @@ def rmsd(coords1, coords2):
 
     return rmsd
 
+labels = ['CrashMonkey', 'xfstests']
 # Y axis
 xfstests_rmsd_res = []
 crashmonkey_rmsd_res = []
@@ -93,23 +98,29 @@ for i in range(len(targets_log)):
 # print('xfstests_rmsd_res: ', xfstests_rmsd_res)
 # print('crashmonkey_rmsd_res: ', crashmonkey_rmsd_res)
 
-xtick_values = [10, 100, 1000, 10000, 100000, 1000000, 10000000]
+xtick_values = [1, 10, 100, 1000, 10000, 100000, 1000000, 10000000]
 # xtick_labels = ['0', '1', '2', '3 (1K)', '4', '5', '6 (1M)', '7 (10M)']
-xtick_labels = ['10', '100', '1K', '10K', '100K', '1M', '10M']
+xtick_labels = ['0', '10', '100', '1K', '10K', '100K', '1M', '10M']
 
-plt.plot(targets, crashmonkey_rmsd_res, color='#4daf4a', linestyle='-', marker='.', label='CrashMonkey')
-plt.plot(targets, xfstests_rmsd_res, color='#ff7f0e', linestyle='--', marker='.', label='xfstests')
+fig, ax = plt.subplots(figsize=(3.2, 1.6))
 
-plt.xscale('log')
+ax.plot(targets, crashmonkey_rmsd_res, color='#4daf4a', linewidth=2, linestyle='-', marker='.', label='CrashMonkey')
+ax.plot(targets, xfstests_rmsd_res, color='#ff7f0e', linewidth=2, linestyle='--', marker='.', label='xfstests')
+
+ax.set_xscale('log')
 
 plt.xticks(xtick_values, xtick_labels)
+# ax.set_xlim(xmin = 0.1)
 
-plt.legend(loc='best')
+ax.legend(loc='best', fontsize=5)
 
 # Add a title and axis labels
 # plt.title('Line Plot Example')
-plt.xlabel('Target Value T (log scale base 10)')
-plt.ylabel('RMSD Value')
+ax.set_xlabel('Target Value T (log scale base 10)', fontweight='bold')
+ax.set_ylabel('RMSD Value', fontweight='bold')
+
+# Adjust the plot layout
+plt.tight_layout()
 
 # Save the plot as a PDF file
-plt.savefig('fig7-open-flags-RMSD.pdf', format='pdf', bbox_inches='tight', pad_inches=0.1)
+plt.savefig('rmsd-open-flags.pdf', format='pdf', bbox_inches='tight')
