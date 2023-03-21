@@ -31,7 +31,7 @@ def find_crashmonkey_filename(text, c):
 # Use find_mcfs_filename for MCFS
 # Use find_xfstests_filename for xfstests
 def find_testing_filename(text, c):
-    return find_crashmonkey_filename(text, c)
+    return find_xfstests_filename(text, c)
 
 # Does not collect input coverage for close()
 def init_input_cov():

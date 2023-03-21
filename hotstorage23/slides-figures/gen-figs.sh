@@ -28,9 +28,9 @@ if test -f "${HOME}/Downloads/$SRC" ; then
 fi
 
 # IOCov Architecture figure
-get1fig 1 fig1-iocov-framework.pdf
+get1fig 1 iocov-framework.pdf
 # IOCov Bug Example Figure
-get1fig 3 fig2-bug-example.pdf
+get1fig 2 bug-example.pdf
 
 # cleanup
 rm -f temp.pdf

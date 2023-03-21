@@ -40,10 +40,11 @@ class TraceParser:
                 (syscall-return) value: number of hit count of the key
     """
 
-    def __init__(self, path, is_mcfs):
+    def __init__(self, path, is_mcfs, name_suffix):
         self.path = path 
         # Boolen whether it is mcfs
         self.is_mcfs = is_mcfs
+        self.name_suffix = name_suffix
         # Dict to save all (filtered) input coverage
         self.input_cov = init_input_cov() 
         # Dict to save all (filtered) output coverage
@@ -877,11 +878,11 @@ class TraceParser:
                 else:
                     sys.exit('Unrecognized line of syscall as no input or output prefix') 
         if GET_FLAGS:
-            with open('open_flag_unfilter.pkl', 'wb') as f:
+            with open('open_flag_unfilter_{}.pkl'.format(self.name_suffix), 'wb') as f:
                 pickle.dump(open_flag_unfilter, f)
-            with open('open_flag_filtered.pkl', 'wb') as f:
+            with open('open_flag_filtered_{}.pkl'.format(self.name_suffix), 'wb') as f:
                 pickle.dump(open_flag_filtered, f)
         if OPEN_DUMP:
-            with open('open_var_count.pkl', 'wb') as f:
+            with open('open_var_count_{}.pkl'.format(self.name_suffix), 'wb') as f:
                 pickle.dump(open_var_count, f)            
         return self.input_cov, self.output_cov, self.unfilter_input_cov

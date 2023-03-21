@@ -27,7 +27,7 @@ def main(args):
             os.path.exists('unfilter_input_cov_{}.pkl'.format(name_suffix))):
             sys.exit('Cov pickle files already exist.')
         # tic = time.perf_counter()
-        tp = TraceParser(file_path, is_mcfs)
+        tp = TraceParser(file_path, is_mcfs, name_suffix)
         input_cov, output_cov, unfilter_input_cov = tp.cal_input_output_cov()
         # toc = time.perf_counter()
         # print(f"LTTng analyzer completed in {toc - tic:0.4f} seconds")
@@ -96,9 +96,9 @@ if __name__ == "__main__":
     # default_is_mcfs = False
     # default_lttng_log = 'crashmonkey-lttng-ext4-allrecur-614.log'
 
-    default_plot_name = 'crashmonkey'
+    default_plot_name = 'xfstests_xattr_open_dump'
     default_is_mcfs = False
-    default_lttng_log = 'crashmonkey-lttng-ext4-allrecur-614.log'
+    default_lttng_log = 'xfstests-lttng-all-related-ext4-all-xattrs-4633.log'
 
     parser = argparse.ArgumentParser()
     # Need Python 3.9+

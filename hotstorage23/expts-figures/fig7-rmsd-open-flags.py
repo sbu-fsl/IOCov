@@ -6,6 +6,7 @@ import os
 import pickle
 import math
 import matplotlib as mpl
+import matplotlib.ticker as ticker
 
 # Set the font size globally
 mpl.rcParams['font.size'] = 5
@@ -111,6 +112,8 @@ ax.set_xscale('log')
 
 plt.xticks(xtick_values, xtick_labels)
 # ax.set_xlim(xmin = 0.1)
+ax.set_ylim(bottom=0)
+ax.yaxis.set_major_locator(ticker.MultipleLocator(5))
 
 ax.legend(loc='best', fontsize=5)
 
