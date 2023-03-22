@@ -5,6 +5,7 @@ import numpy as np
 import os
 import pickle
 from matplotlib.ticker import ScalarFormatter
+import sys
 
 dpi_val = 600
 
@@ -43,6 +44,22 @@ def read_write_count_by_pkl(pkl_file):
     # Real Values
     Y_cut_xfstests = Y_xfstests[0:Keep+1]
 
+    # print('X_cut_xfstests: ', X_cut_xfstests)
+    # print('Y_cut_xfstests: ', Y_cut_xfstests)
+
+    # ROUND DOWN: 2^{10} == 1024 (1024 - 2047)
+    X_xfstests = []
+    Y_xfstests = []
+    
+    for i in range(len(X_cut_xfstests)):
+        if X_cut_xfstests[i] == 'Intv.':
+            Y_xfstests[-1] += Y_cut_xfstests[i]
+        else: # Not 'Intv.'
+            X_xfstests.append(X_cut_xfstests[i])
+            Y_xfstests.append(Y_cut_xfstests[i])
+
+    """
+    # ONLY BOUNDARY VALUES EXACTLY EQUAL TO POWERS OF 2 NUMBERS
     X_xfstests = []
     Y_xfstests = []
     for i in range(len(X_cut_xfstests)):
@@ -54,10 +71,12 @@ def read_write_count_by_pkl(pkl_file):
     Y_xfstests.pop(0)
     # print('X_xfstests: ', X_xfstests)
     # print('Y_xfstests: ', Y_xfstests)
-
+    """
     # Do not use 2^10, use 10 instead 
     for i in range(len(X_xfstests)):
         X_xfstests[i] = X_xfstests[i].split('^')[-1]
+    
+    X_xfstests[0] = 'Equal to 0'
     return X_xfstests, Y_xfstests
 
 
@@ -106,21 +125,29 @@ ax.barh(y_pos, Y_data[1], color='#ff7f0e',  edgecolor='black', linewidth=0.5, le
 
 # plt.xlim(left=0.1)
 
-ax.set_yticks(ax.get_yticks()[::2])
+#print('ax.get_yticks(): ', ax.get_yticks())
+#print('type(ax.get_yticks()): ', type(ax.get_yticks()))
+#print('ax.get_yticks()[::2]: ', ax.get_yticks()[::2])
+#print('type(ax.get_yticks()[::2]): ', type(ax.get_yticks()[::2]))
+
+# print('np.insert(ax.get_yticks()[::2], 1, 1): ', np.insert(ax.get_yticks()[::2], 1, 1))
+crafted_yticks = np.insert(ax.get_yticks()[::2], 1, 1)
+crafted_yticks = np.concatenate((crafted_yticks[:2], crafted_yticks[2:] + 1))
+# print('crafted_yticks: ', crafted_yticks)
+
+ax.set_yticks(crafted_yticks)
 
 plt.xticks(xtick_values, xtick_labels)
 
 ax.set_xlim(xmin = 0.1)
 
-"""
 # Set the arrow
-arrow_index = 26
+arrow_index = 29
 arrow_x = Y_xfstests[arrow_index]
 arrow_y = y_pos[arrow_index]
 arrow_text = f'Max write size 258 MiB'
 ax.annotate(arrow_text, xy=(arrow_x, arrow_y), xytext=(arrow_x+5, arrow_y),
              arrowprops=dict(facecolor='red', arrowstyle='->'))
-"""
 
 #ax.set_title('My Bar Chart')
 ax.set_xlabel('Frequency (log scale base 10)', fontweight='bold')
@@ -134,4 +161,4 @@ ax.legend(loc='best', ncol=len(labels))
 plt.tight_layout()
 
 # dpi=dpi_val
-fig.savefig('fig5-write-count.pdf', format='pdf', bbox_inches='tight')
+fig.savefig('input-write-size.pdf', format='pdf', bbox_inches='tight')
