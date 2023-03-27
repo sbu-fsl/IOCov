@@ -81,8 +81,11 @@ ax.set_ylabel('Open Flags', fontweight='bold')
 # ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=len(labels))
 ax.legend(loc='best', ncol=len(labels))
 
+ax.set_axisbelow(True)
+ax.grid(axis='x', linestyle='-', alpha=0.3)
+
 # Adjust the plot layout
 plt.tight_layout()
 
 # Save the plot to a PDF file as a vector plot
-plt.savefig('fig4-open-flags.pdf', format='pdf', bbox_inches='tight')
+plt.savefig('input-open-flags.pdf', format='pdf', bbox_inches='tight')

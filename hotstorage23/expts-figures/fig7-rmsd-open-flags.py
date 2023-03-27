@@ -122,6 +122,9 @@ ax.legend(loc='best', fontsize=5)
 ax.set_xlabel('Target Value T (log scale base 10)', fontweight='bold')
 ax.set_ylabel('RMSD Value', fontweight='bold')
 
+ax.set_axisbelow(True)
+ax.grid(axis='y', linestyle='-', alpha=0.3)
+
 # Adjust the plot layout
 plt.tight_layout()
 

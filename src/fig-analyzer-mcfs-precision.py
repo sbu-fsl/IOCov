@@ -26,14 +26,20 @@ print('mcfs_log_input_cnt: ', mcfs_log_input_cnt)
 print('iocov_mcfs_input_cnt: ', iocov_mcfs_input_cnt)
 
 fig3_iocov_mcfs_precision = {}
+fig3_iocov_mcfs_error_ratio = {}
 
 for sc in INPUT_SYSCALLS.keys():
     if mcfs_log_input_cnt[sc] != 0:
         fig3_iocov_mcfs_precision[sc] = (1 - abs(mcfs_log_input_cnt[sc] - iocov_mcfs_input_cnt[sc]) / mcfs_log_input_cnt[sc]) * 100
+        fig3_iocov_mcfs_error_ratio[sc] = (abs(mcfs_log_input_cnt[sc] - iocov_mcfs_input_cnt[sc]) / mcfs_log_input_cnt[sc]) * 100
 
 print('fig3_iocov_mcfs_precision: ', fig3_iocov_mcfs_precision)
 
 with open('fig3_iocov_mcfs_precision.pkl', 'wb') as f:
     pickle.dump(fig3_iocov_mcfs_precision, f)
+
+print('fig3_iocov_mcfs_error_ratio: ', fig3_iocov_mcfs_error_ratio)
+
+print('Avg fig3_iocov_mcfs_error_ratio: ', sum(fig3_iocov_mcfs_error_ratio.values()) / len(fig3_iocov_mcfs_error_ratio))
 
 print('fig3_iocov_mcfs_precision dumped!')

@@ -157,6 +157,9 @@ ax.set_ylabel('Write Size in Bytes (exponent of log base 2)', fontweight='bold')
 # ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=len(labels))
 ax.legend(loc='best', ncol=len(labels))
 
+ax.set_axisbelow(True)
+ax.grid(axis='x', linestyle='-', alpha=0.3)
+
 # Adjust the plot layout
 plt.tight_layout()
 
