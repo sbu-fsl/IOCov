@@ -75,8 +75,8 @@ ax.set_ylim(ymin = 0.1)
 
 # Create the stacked bar chart
 # 'green' 'orange'
-ax.bar(ind, data[0], width, color='#4daf4a', edgecolor='black', linewidth=0.5, hatch='//', label='CrashMonkey')
-ax.bar(ind + width, data[1], width, color='#ff7f0e',  edgecolor='black', linewidth=0.5, label='xfstests')
+ax.bar(ind, data[0], width, color='#4daf4a', edgecolor='black', linewidth=0.5, label='CrashMonkey')
+ax.bar(ind + width, data[1], width, color='#ff7f0e',  edgecolor='black', linewidth=0.5, hatch='////', label='xfstests')
 
 # Add a title and axis labels
 # ax.set_title('Stacked Bar Chart')
