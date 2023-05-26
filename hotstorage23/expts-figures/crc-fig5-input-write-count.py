@@ -105,7 +105,7 @@ fig, ax = plt.subplots()
 # Position of bars on x-axis
 x_pos = np.arange(len(X_xfstests))
 
-width = 0.4
+width = 0.35
 
 plt.xticks(x_pos, X_xfstests)
 ax.set_yscale('log')
@@ -125,8 +125,17 @@ ax.bar(x_pos, Y_data[0], width, color='#4daf4a', edgecolor='black', linewidth=0.
 ax.bar(x_pos + width, Y_data[1], width, color='#ff7f0e',  edgecolor='black', linewidth=0.5, hatch='////', label='xfstests')
 
 # plt.xlim(left=0.1)
+# print('x_pos: ', x_pos)
+# print('x_labels: ', x_labels)
+# print('width: ', width)
 
-plt.xticks(x_pos + width / 2, x_labels, rotation=45, ha='right', fontsize=8)
+x_first_label = x_labels[0]
+x_labels[0] = ''
+
+# ax.set_xticks(x_pos[:1] + width / 2, x_labels[:1], rotation=45, ha='right', fontsize=8)
+ax.set_xticks(x_pos + width / 2, x_labels, rotation=45, ha='center', fontsize=8)
+# ax.set_xticks(x_pos + width / 2, x_labels, rotation=45, ha='center', fontsize=8)
+ax.text(width / 2, 0.012, x_first_label, rotation=45, ha='right', fontsize=8)
 
 plt.yticks(ytick_values, ytick_labels)
 
