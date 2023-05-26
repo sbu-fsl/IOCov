@@ -48,54 +48,47 @@ crashmonkey_xaxis, crashmonkey_yaxis = read_output_coords_by_pkl(sc_name, crashm
 #     if xfstest_yaxis[i] < crashmonkey_yaxis[i]:
 #         print('xfstests is SMALLER than crashmonkey: ', i, xfstest_xaxis[i])
 
-diff_yaxis = []
-for i in range(len(xfstest_xaxis)):
-    if xfstest_yaxis[i] >= crashmonkey_yaxis[i]:
-        diff_yaxis.append(xfstest_yaxis[i] - crashmonkey_yaxis[i])
-    else:
-        diff_yaxis.append(crashmonkey_yaxis[i] - xfstest_yaxis[i])
-
-Y_data = np.array([crashmonkey_yaxis, diff_yaxis])
+Y_data = np.array([crashmonkey_yaxis, xfstest_yaxis])
 
 labels = ['CrashMonkey', 'xfstests']
 
 # fig, ax = plt.subplots(figsize=(8, 6))
 fig, ax = plt.subplots()
 
-ax.set_xscale('log')
+width = 0.5
 
-xtick_values = [0.1, 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000]
-xtick_labels = ['0', '1', '10', '100', '1K', '10K', '100K', '1M', '10M']
+x_pos = np.arange(len(xfstest_xaxis))
+
+ax.set_yscale('log')
+
+ytick_values = [0.1, 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000]
+ytick_labels = ['0', '1', '10', '100', '1K', '10K', '100K', '1M', '10M']
 
 # 'maroon'
 # ax.barh(xaxis, yaxis, log=True, color ='#d62728', edgecolor='black', linewidth=0.5)
 xfstest_xaxis[0] = 'OK (>= 0)'
 
-crashmonkey_bars = ax.barh(xfstest_xaxis, Y_data[0], color='#4daf4a', edgecolor='black', linewidth=0.5, label='CrashMonkey')
-diff_bars = ax.barh(xfstest_xaxis, Y_data[1], color='#ff7f0e',  edgecolor='black', linewidth=0.5, left=Y_data[0], hatch='////', label='xfstests')
+x_labels = xfstest_xaxis
 
-diff_idx = 7
+ax.bar(x_pos, Y_data[0], width, color='#4daf4a', edgecolor='black', linewidth=0.5, label='CrashMonkey')
+ax.bar(x_pos + width, Y_data[1], width, color='#ff7f0e',  edgecolor='black', linewidth=0.5, hatch='////', label='xfstests')
 
-crashmonkey_bars[diff_idx].set_facecolor('#ff7f0e')
-crashmonkey_bars[diff_idx].set_hatch('////')
-diff_bars[diff_idx].set_facecolor('#4daf4a')
-# Set as no hatch
-diff_bars[diff_idx].set_hatch('')
+plt.yticks(ytick_values, ytick_labels)
 
-plt.xticks(xtick_values, xtick_labels)
+plt.xticks(x_pos + width / 2, x_labels, rotation=45, ha='right', fontsize=8)
 
 # plt.xlim(left=0.1)
-ax.set_xlim(xmin = 0.1)
+ax.set_ylim(ymin = 0.1)
 
-ax.set_xlabel('Frequency (log scale base 10)', fontweight='bold')
-ax.set_ylabel('Open Return Code or Error', fontweight='bold')
+ax.set_ylabel('Frequency (log scale base 10)', fontweight='bold')
+ax.set_xlabel('Open Return Code or Error', fontweight='bold')
 
 # ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=len(labels))
 ax.legend(loc='best', ncol=len(labels))
 
 ax.set_axisbelow(True)
-ax.grid(axis='x', linestyle='-', alpha=0.3)
+ax.grid(axis='y', linestyle='-', alpha=0.3)
 
 plt.tight_layout()
 
-fig.savefig('output-open.pdf', format='pdf', bbox_inches='tight')
+fig.savefig('crc-output-open.pdf', format='pdf', bbox_inches='tight')
