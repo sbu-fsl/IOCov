@@ -92,15 +92,9 @@ X_crashmonkey, Y_crashmonkey = read_write_count_by_pkl(crashmonkey_pkl_file)
 # print('X_crashmonkey: ', X_crashmonkey)
 # print('Y_crashmonkey: ', Y_crashmonkey)
 
-for i in range(len(X_xfstests)):
-    if Y_xfstests[i] < Y_crashmonkey[i]:
-        print('xfstests is SMALLER than crashmonkey')
+x_labels = X_xfstests
 
-Y_diff = []
-for i in range(len(X_xfstests)):
-    Y_diff.append(Y_xfstests[i] - Y_crashmonkey[i])
-
-Y_data = np.array([Y_crashmonkey, Y_diff])
+Y_data = np.array([Y_crashmonkey, Y_xfstests])
 
 labels = ['CrashMonkey', 'xfstests']
 
@@ -108,60 +102,49 @@ labels = ['CrashMonkey', 'xfstests']
 # fig, ax = plt.subplots(figsize=(10, 6))
 fig, ax = plt.subplots()
 
-y_pos = np.arange(len(X_xfstests))
-plt.yticks(y_pos, X_xfstests)
+# Position of bars on x-axis
+x_pos = np.arange(len(X_xfstests))
 
-ax.set_xscale('log')
+width = 0.4
 
-xtick_values = [0.1, 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000]
-# xtick_labels = ['0', '1', '2', '3 (1K)', '4', '5', '6 (1M)', '7 (10M)']
-xtick_labels = ['0', '1', '10', '100', '1K', '10K', '100K', '1M', '10M']
+plt.xticks(x_pos, X_xfstests)
+ax.set_yscale('log')
+
+ytick_values = [0.1, 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000]
+# ytick_labels = ['0', '1', '2', '3 (1K)', '4', '5', '6 (1M)', '7 (10M)']
+ytick_labels = ['0', '1', '10', '100', '1K', '10K', '100K', '1M', '10M']
 
 # 'maroon', ['#77b5e5' (blue), '#4daf4a' (green), '#f0e442' (yellow), '#d62728' (red), '#984ea3' (purple), '#ff7f0e' (orange)]
-# ax.barh(y_pos, Y_xfstests, log=True, color ='#77b5e5', edgecolor='black', linewidth=0.5)
+# ax.barh(x_pos, Y_xfstests, log=True, color ='#77b5e5', edgecolor='black', linewidth=0.5)
 
-ax.barh(y_pos, Y_data[0], color='#4daf4a', edgecolor='black', linewidth=0.5, label='CrashMonkey')
-ax.barh(y_pos, Y_data[1], color='#ff7f0e',  edgecolor='black', linewidth=0.5, left=Y_data[0], hatch='////', label='xfstests')
+# print('x_pos: ', x_pos)
+# print('Y_data[0]: ', Y_data[0])
+# print('Y_data[1]: ', Y_data[1])
+
+ax.bar(x_pos, Y_data[0], width, color='#4daf4a', edgecolor='black', linewidth=0.5, label='CrashMonkey')
+ax.bar(x_pos + width, Y_data[1], width, color='#ff7f0e',  edgecolor='black', linewidth=0.5, hatch='////', label='xfstests')
 
 # plt.xlim(left=0.1)
 
-#print('ax.get_yticks(): ', ax.get_yticks())
-#print('type(ax.get_yticks()): ', type(ax.get_yticks()))
-#print('ax.get_yticks()[::2]: ', ax.get_yticks()[::2])
-#print('type(ax.get_yticks()[::2]): ', type(ax.get_yticks()[::2]))
+plt.xticks(x_pos + width / 2, x_labels, rotation=45, ha='right', fontsize=8)
 
-# print('np.insert(ax.get_yticks()[::2], 1, 1): ', np.insert(ax.get_yticks()[::2], 1, 1))
-crafted_yticks = np.insert(ax.get_yticks()[::2], 1, 1)
-crafted_yticks = np.concatenate((crafted_yticks[:2], crafted_yticks[2:] + 1))
-# print('crafted_yticks: ', crafted_yticks)
+plt.yticks(ytick_values, ytick_labels)
 
-ax.set_yticks(crafted_yticks)
-
-plt.xticks(xtick_values, xtick_labels)
-
-ax.set_xlim(xmin = 0.1)
-
-# Set the arrow
-arrow_index = 29
-arrow_x = Y_xfstests[arrow_index]
-arrow_y = y_pos[arrow_index]
-arrow_text = f'Max write size 258 MiB'
-ax.annotate(arrow_text, xy=(arrow_x, arrow_y), xytext=(arrow_x+5, arrow_y),
-             arrowprops=dict(facecolor='red', arrowstyle='->'))
+ax.set_ylim(ymin = 0.1)
 
 #ax.set_title('My Bar Chart')
-ax.set_xlabel('Frequency (log scale base 10)', fontweight='bold')
-ax.set_ylabel('Write Size in Bytes (exponent of log base 2)', fontweight='bold')
+ax.set_xlabel('Write Size in Bytes (exponent of log base 2)', fontweight='bold')
+ax.set_ylabel('Frequency (log scale base 10)', fontweight='bold')
 
 # Add a legend
 # ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=len(labels))
 ax.legend(loc='best', ncol=len(labels))
 
 ax.set_axisbelow(True)
-ax.grid(axis='x', linestyle='-', alpha=0.3)
+ax.grid(axis='y', linestyle='-', alpha=0.3)
 
 # Adjust the plot layout
 plt.tight_layout()
 
 # dpi=dpi_val
-fig.savefig('input-write-size.pdf', format='pdf', bbox_inches='tight')
+fig.savefig('crc-input-write-size.pdf', format='pdf', bbox_inches='tight')
