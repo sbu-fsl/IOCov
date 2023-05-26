@@ -91,7 +91,9 @@ ax.set_axisbelow(True)
 ax.grid(axis='y', linestyle='-', alpha=0.3)
 
 # print('x_labels: ', x_labels)
-plt.xticks(ind + width / 2, x_labels, rotation='vertical', fontsize=8)
+# plt.xticks(ind + width / 2, x_labels, rotation='vertical', fontsize=8)
+
+plt.xticks(ind + width / 2, x_labels, rotation=45, ha='right', fontsize=8)
 
 # Adjust the plot layout
 plt.tight_layout()
