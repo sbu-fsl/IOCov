@@ -124,6 +124,18 @@ ytick_labels = ['0', '1', '10', '100', '1K', '10K', '100K', '1M', '10M']
 ax.bar(x_pos, Y_data[0], width, color='#4daf4a', edgecolor='black', linewidth=0.5, label='CrashMonkey')
 ax.bar(x_pos + width, Y_data[1], width, color='#ff7f0e',  edgecolor='black', linewidth=0.5, hatch='////', label='xfstests')
 
+# annotation for the max write size bar
+arrow_x = 28
+arrow_y = 1
+
+print('arrow_x: ', arrow_x)
+print('arrow_y: ', arrow_y)
+
+annotation_text = f'Max 258 MiB'  # annotation text
+
+plt.annotate(annotation_text, xy=(arrow_x + 1.25 + width/4, arrow_y), xytext=(arrow_x + 1.25 + width/4, arrow_y + 5),
+             arrowprops=dict(color='red', arrowstyle='->'), ha='center', fontsize=8, color='red')
+
 # plt.xlim(left=0.1)
 # print('x_pos: ', x_pos)
 # print('x_labels: ', x_labels)
