@@ -50,7 +50,7 @@ data = np.array([data1_crashmonkey, data2_xfstests])
 N_open_flags = len(fig4_xfstests_open_flags.keys())
 
 # Position of bars on x-axis
-ind = np.arange(N_open_flags)
+x_pos = np.arange(N_open_flags)
 
 labels = ['CrashMonkey', 'xfstests']
 # Set up the plot
@@ -75,8 +75,8 @@ ax.set_ylim(ymin = 0.1)
 
 # Create the stacked bar chart
 # 'green' 'orange'
-ax.bar(ind, data[0], width, color='#4daf4a', edgecolor='black', linewidth=0.5, label='CrashMonkey')
-ax.bar(ind + width, data[1], width, color='#ff7f0e',  edgecolor='black', linewidth=0.5, hatch='////', label='xfstests')
+ax.bar(x_pos, data[0], width, color='#4daf4a', edgecolor='black', linewidth=0.5, label='CrashMonkey')
+ax.bar(x_pos + width, data[1], width, color='#ff7f0e',  edgecolor='black', linewidth=0.5, hatch='////', label='xfstests')
 
 # Add a title and axis labels
 # ax.set_title('Stacked Bar Chart')
@@ -91,9 +91,9 @@ ax.set_axisbelow(True)
 ax.grid(axis='y', linestyle='-', alpha=0.3)
 
 # print('x_labels: ', x_labels)
-# plt.xticks(ind + width / 2, x_labels, rotation='vertical', fontsize=8)
+# plt.xticks(x_pos + width / 2, x_labels, rotation='vertical', fontsize=8)
 
-plt.xticks(ind + width / 2, x_labels, rotation=45, ha='right', fontsize=8)
+plt.xticks(x_pos + width / 2, x_labels, rotation=45, ha='right', fontsize=8)
 
 # Adjust the plot layout
 plt.tight_layout()
