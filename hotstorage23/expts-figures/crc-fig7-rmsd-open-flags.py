@@ -105,8 +105,8 @@ xtick_labels = ['0', '10', '100', '1K', '10K', '100K', '1M', '10M']
 
 fig, ax = plt.subplots(figsize=(3.2, 1.6))
 
-ax.plot(targets, crashmonkey_rmsd_res, color='#4daf4a', linewidth=2, linestyle='-', marker='.', label='CrashMonkey')
-ax.plot(targets, xfstests_rmsd_res, color='#ff7f0e', linewidth=2, linestyle='--', marker='.', label='xfstests')
+ax.plot(targets, crashmonkey_rmsd_res, color='#4daf4a', linewidth=2, linestyle='--', marker='.', label='CrashMonkey')
+ax.plot(targets, xfstests_rmsd_res, color='#ff7f0e', linewidth=2, linestyle='-', marker='.', label='xfstests')
 
 ax.set_xscale('log')
 

@@ -70,8 +70,8 @@ xfstest_xaxis[0] = 'OK (>= 0)'
 
 x_labels = xfstest_xaxis
 
-ax.bar(x_pos, Y_data[0], width, color='#4daf4a', edgecolor='black', linewidth=0.5, label='CrashMonkey')
-ax.bar(x_pos + width, Y_data[1], width, color='#ff7f0e',  edgecolor='black', linewidth=0.5, hatch='////', label='xfstests')
+ax.bar(x_pos, Y_data[0], width, color='#4daf4a', edgecolor='black', linewidth=0.5, hatch='//', label='CrashMonkey')
+ax.bar(x_pos + width, Y_data[1], width, color='#ff7f0e',  edgecolor='black', linewidth=0.5, label='xfstests')
 
 plt.yticks(ytick_values, ytick_labels)
 

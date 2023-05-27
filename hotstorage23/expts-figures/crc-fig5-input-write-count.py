@@ -121,8 +121,8 @@ ytick_labels = ['0', '1', '10', '100', '1K', '10K', '100K', '1M', '10M']
 # print('Y_data[0]: ', Y_data[0])
 # print('Y_data[1]: ', Y_data[1])
 
-ax.bar(x_pos, Y_data[0], width, color='#4daf4a', edgecolor='black', linewidth=0.5, label='CrashMonkey')
-ax.bar(x_pos + width, Y_data[1], width, color='#ff7f0e',  edgecolor='black', linewidth=0.5, hatch='////', label='xfstests')
+ax.bar(x_pos, Y_data[0], width, color='#4daf4a', edgecolor='black', linewidth=0.5, hatch='//', label='CrashMonkey')
+ax.bar(x_pos + width, Y_data[1], width, color='#ff7f0e',  edgecolor='black', linewidth=0.5, label='xfstests')
 
 # annotation for the max write size bar
 arrow_x = 28
