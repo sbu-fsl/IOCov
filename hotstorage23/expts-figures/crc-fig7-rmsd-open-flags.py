@@ -120,7 +120,7 @@ ax.legend(loc='best', fontsize=5)
 # Add a title and axis labels
 # plt.title('Line Plot Example')
 ax.set_xlabel('Target Value T (log scale base 10)', fontweight='bold')
-ax.set_ylabel('TCA Value', fontweight='bold')
+ax.set_ylabel('TCD Value', fontweight='bold')
 
 ax.set_axisbelow(True)
 ax.grid(axis='y', linestyle='-', alpha=0.3)
@@ -129,4 +129,4 @@ ax.grid(axis='y', linestyle='-', alpha=0.3)
 plt.tight_layout()
 
 # Save the plot as a PDF file
-plt.savefig('rmsd-open-flags.pdf', format='pdf', bbox_inches='tight')
+plt.savefig('crc-rmsd-open-flags.pdf', format='pdf', bbox_inches='tight')
