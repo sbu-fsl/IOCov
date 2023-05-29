@@ -128,13 +128,13 @@ ax.bar(x_pos + width, Y_data[1], width, color='#ff7f0e',  edgecolor='black', lin
 arrow_x = 28
 arrow_y = 1
 
-print('arrow_x: ', arrow_x)
-print('arrow_y: ', arrow_y)
+# print('arrow_x: ', arrow_x)
+# print('arrow_y: ', arrow_y)
 
 annotation_text = f'Max 258 MiB'  # annotation text
 
 plt.annotate(annotation_text, xy=(arrow_x + 1.25 + width/4, arrow_y), xytext=(arrow_x + 1.25 + width/4, arrow_y + 5),
-             arrowprops=dict(color='red', arrowstyle='->'), ha='center', fontsize=8, color='red')
+             arrowprops=dict(color='black', arrowstyle='->'), ha='center', fontsize=8, color='black')
 
 # plt.xlim(left=0.1)
 # print('x_pos: ', x_pos)
