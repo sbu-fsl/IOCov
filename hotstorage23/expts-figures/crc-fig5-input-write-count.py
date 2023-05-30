@@ -143,7 +143,6 @@ plt.annotate(annotation_text, xy=(arrow_x + 1.25 + width/4, arrow_y), xytext=(ar
 
 x_first_label = x_labels[0]
 x_labels[0] = ''
-second_x_labels = x_labels.copy()
 
 # ax.set_xticks(x_pos[:1] + width / 2, x_labels[:1], rotation=45, ha='right', fontsize=8)
 ax.set_xticks(x_pos + width / 2, x_labels, rotation=45, ha='center', fontsize=8)
@@ -161,8 +160,17 @@ secx = ax.secondary_xaxis('top', functions=(transform, transform))
 # secx.set_xticks(primary_xticks)
 sec_xtick_gap = 4
 
-secx.set_xticks(x_pos + width / 2)
+sec_x_pos_list = []
 
+for i in range(len(x_pos)):
+    if i == 0:
+        sec_x_pos_list.append(x_pos[i])
+    elif i % sec_xtick_gap == 1:
+        sec_x_pos_list.append(x_pos[i])
+
+sec_x_pos = np.array(sec_x_pos_list)
+
+secx.set_xticks(sec_x_pos + width / 2)
 
 def number_to_bytes(num):
     res_num = 2 ** num
@@ -175,15 +183,15 @@ def number_to_bytes(num):
     elif res_num < 1024 ** 4:
         return f'{int(res_num / 1024 ** 3)}GiB'
 
-# print('second_x_labels: ', second_x_labels)
-for i in range(len(second_x_labels)):
+second_x_labels = []
+for i in range(len(x_labels)):
     if i == 0:
-        second_x_labels[i] = '0B'
+        second_x_labels.append('0B')
     elif i % sec_xtick_gap == 1:
-        second_x_labels[i] = number_to_bytes(int(second_x_labels[i]))
-    else:
-        second_x_labels[i] = ''
+        second_x_labels.append(number_to_bytes(int(x_labels[i])))
 
+# print('sec_x_pos: ', sec_x_pos)
+# print('second_x_labels: ', second_x_labels)
 secx.set_xticklabels(second_x_labels, fontsize=8)
 
 plt.yticks(ytick_values, ytick_labels)
