@@ -143,11 +143,48 @@ plt.annotate(annotation_text, xy=(arrow_x + 1.25 + width/4, arrow_y), xytext=(ar
 
 x_first_label = x_labels[0]
 x_labels[0] = ''
+second_x_labels = x_labels.copy()
 
 # ax.set_xticks(x_pos[:1] + width / 2, x_labels[:1], rotation=45, ha='right', fontsize=8)
 ax.set_xticks(x_pos + width / 2, x_labels, rotation=45, ha='center', fontsize=8)
 # ax.set_xticks(x_pos + width / 2, x_labels, rotation=45, ha='center', fontsize=8)
 ax.text(width / 2, 0.012, x_first_label, rotation=45, ha='right', fontsize=8)
+
+# Create a function to define the transformation
+def transform(x):
+    return x  # Example transformation for secondary x-axis
+
+# Set secondary x-axis values
+secx = ax.secondary_xaxis('top', functions=(transform, transform))
+
+# primary_xticks = ax.get_xticks()
+# secx.set_xticks(primary_xticks)
+sec_xtick_gap = 4
+
+secx.set_xticks(x_pos + width / 2)
+
+
+def number_to_bytes(num):
+    res_num = 2 ** num
+    if res_num < 1024:
+        return f'{res_num}B'
+    elif res_num < 1024 ** 2:
+        return f'{int(res_num / 1024)}KiB'
+    elif res_num < 1024 ** 3:
+        return f'{int(res_num / 1024 ** 2)}MiB'
+    elif res_num < 1024 ** 4:
+        return f'{int(res_num / 1024 ** 3)}GiB'
+
+# print('second_x_labels: ', second_x_labels)
+for i in range(len(second_x_labels)):
+    if i == 0:
+        second_x_labels[i] = '0B'
+    elif i % sec_xtick_gap == 1:
+        second_x_labels[i] = number_to_bytes(int(second_x_labels[i]))
+    else:
+        second_x_labels[i] = ''
+
+secx.set_xticklabels(second_x_labels, fontsize=8)
 
 plt.yticks(ytick_values, ytick_labels)
 
@@ -160,9 +197,11 @@ ax.set_ylabel('Frequency (log scale base 10)', fontweight='bold')
 # Add a legend
 # ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=len(labels))
 ax.legend(loc='best', ncol=len(labels))
+# ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.16), ncol=len(labels))
 
 ax.set_axisbelow(True)
-ax.grid(axis='y', linestyle='-', alpha=0.3)
+ax.grid(axis='y', linestyle='dotted', alpha=0.4)
+ax.grid(axis='x', linestyle='dotted', alpha=0.4)
 
 # Adjust the plot layout
 plt.tight_layout()
