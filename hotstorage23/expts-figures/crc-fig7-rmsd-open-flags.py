@@ -8,6 +8,10 @@ import math
 import matplotlib as mpl
 import matplotlib.ticker as ticker
 
+import matplotlib
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
+
 # Set the font size globally
 mpl.rcParams['font.size'] = 5
 
@@ -119,7 +123,7 @@ ax.legend(loc='best', fontsize=5)
 
 # Add a title and axis labels
 # plt.title('Line Plot Example')
-ax.set_xlabel('Target Value T (log scale base 10)', fontweight='bold')
+ax.set_xlabel('Target Value (log scale base 10)', fontweight='bold')
 ax.set_ylabel('TCD Value', fontweight='bold')
 
 ax.set_axisbelow(True)
