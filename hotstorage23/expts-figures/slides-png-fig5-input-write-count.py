@@ -217,4 +217,4 @@ plt.tight_layout()
 
 # dpi=dpi_val
 dpi_val = 600
-fig.savefig('slides-input-write-size.pdf', format='pdf', bbox_inches='tight', dpi=dpi_val)
+fig.savefig('slides-input-write-size.png', format='png', bbox_inches='tight', dpi=dpi_val)

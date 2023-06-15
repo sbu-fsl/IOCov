@@ -133,4 +133,4 @@ plt.tight_layout()
 
 dpi_val = 600
 # Save the plot as a PDF file
-plt.savefig('slides-rmsd-open-flags.pdf', format='pdf', bbox_inches='tight', dpi=dpi_val)
+plt.savefig('slides-rmsd-open-flags.png', format='png', bbox_inches='tight', dpi=dpi_val)
