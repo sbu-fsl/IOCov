@@ -94,4 +94,4 @@ ax.grid(axis='y', linestyle='-', alpha=0.3)
 plt.tight_layout()
 
 dpi_val = 600
-fig.savefig('crc-output-open.pdf', format='pdf', bbox_inches='tight', dpi=dpi_val)
+fig.savefig('slides-output-open.pdf', format='pdf', bbox_inches='tight', dpi=dpi_val)
