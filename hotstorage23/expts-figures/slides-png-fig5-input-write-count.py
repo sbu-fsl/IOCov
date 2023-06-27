@@ -200,7 +200,7 @@ plt.yticks(ytick_values, ytick_labels)
 ax.set_ylim(ymin = 0.1)
 
 #ax.set_title('My Bar Chart')
-ax.set_xlabel('Write Size in Bytes (exponent of log base 2)', fontweight='bold')
+ax.set_xlabel('Write Size in Bytes (log base 2)', fontweight='bold')
 ax.set_ylabel('Frequency (log scale base 10)', fontweight='bold')
 
 # Add a legend

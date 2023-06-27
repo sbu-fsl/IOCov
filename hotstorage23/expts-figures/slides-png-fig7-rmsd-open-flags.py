@@ -122,7 +122,7 @@ ax.legend(loc='best', fontsize=5)
 
 # Add a title and axis labels
 # plt.title('Line Plot Example')
-ax.set_xlabel('Target Value (log scale base 10)', fontweight='bold')
+ax.set_xlabel('Target Value (log base 10)', fontweight='bold')
 ax.set_ylabel('TCD Value', fontweight='bold')
 
 ax.set_axisbelow(True)
