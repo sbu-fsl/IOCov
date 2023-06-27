@@ -145,8 +145,12 @@ plt.annotate(annotation_text, xy=(arrow_x + 1.25 + width/4, arrow_y), xytext=(ar
 x_first_label = x_labels[0]
 x_labels[0] = ''
 
+for i in range(len(x_labels)):
+    if i % 2 == 0:
+        x_labels[i] = ''
+
 # ax.set_xticks(x_pos[:1] + width / 2, x_labels[:1], rotation=45, ha='right', fontsize=8)
-ax.set_xticks(x_pos + width / 2, x_labels, rotation=45, ha='center', fontsize=8)
+ax.set_xticks(x_pos + width / 2, x_labels, fontsize=8)
 # ax.set_xticks(x_pos + width / 2, x_labels, rotation=45, ha='center', fontsize=8)
 ax.text(width / 2, 0.012, x_first_label, rotation=45, ha='right', fontsize=8)
 

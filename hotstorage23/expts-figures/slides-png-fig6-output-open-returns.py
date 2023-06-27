@@ -83,7 +83,7 @@ plt.xticks(x_pos + width / 2, x_labels, rotation=45, ha='right', fontsize=8)
 ax.set_ylim(ymin = 0.1)
 
 ax.set_ylabel('Frequency (log scale base 10)', fontweight='bold')
-ax.set_xlabel('Open Return Code or Error', fontweight='bold')
+ax.set_xlabel('Open Return Code', fontweight='bold')
 
 # ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=len(labels))
 ax.legend(loc='best', ncol=len(labels))
