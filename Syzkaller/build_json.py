@@ -1,5 +1,6 @@
 import pandas as pd
 import json
+import sys
 
 OPEN_BIT_FLAGS = {
     0: 'O_RDONLY',
@@ -39,12 +40,20 @@ SETXATTR_FLAGS_NUMS = {
     2: 'XATTR_REPLACE'
 }
 
+# Fetch each syscall sheet as a data frame 
+# open and its variants (openat: open/opanat/openat2; creat: creat)
 df_openat = pd.read_excel('syzkaller-syscalls.xlsx', sheet_name='openat')
 df_creat = pd.read_excel('syzkaller-syscalls.xlsx', sheet_name='creat')
+
+# read and its variants 
 df_read = pd.read_excel('syzkaller-syscalls.xlsx', sheet_name='read')
 df_pread64 = pd.read_excel('syzkaller-syscalls.xlsx', sheet_name='pread64')
+
+# write and its variants 
 df_write = pd.read_excel('syzkaller-syscalls.xlsx', sheet_name='write')
 df_pwrite64 = pd.read_excel('syzkaller-syscalls.xlsx', sheet_name='pwrite64')
+
+# TODO: check if other syscalls lack variants
 df_lseek = pd.read_excel('syzkaller-syscalls.xlsx', sheet_name='lseek')
 df_truncate = pd.read_excel('syzkaller-syscalls.xlsx', sheet_name='truncate')
 df_mkdir = pd.read_excel('syzkaller-syscalls.xlsx', sheet_name='mkdir')
@@ -53,16 +62,16 @@ df_close = pd.read_excel('syzkaller-syscalls.xlsx', sheet_name='close')
 df_setxattr = pd.read_excel('syzkaller-syscalls.xlsx', sheet_name='setxattr')
 df_getxattr = pd.read_excel('syzkaller-syscalls.xlsx', sheet_name='getxattr')
 
-hex_str = "F"
-binary_str = int(hex_str, 16)
-print(binary_str)
-
+# hex_str = "F"
+# binary_str = int(hex_str, 16)
+# print(binary_str)
 
 ## handle open
 
 open_flag_binary = []
 open_mode_int = []
 
+# TODO: Do we need to manually add "flags_hex" and "mode_hex" headers on xlsx sheets?
 for index, row in df_openat.iterrows():
     if('0x' not in row['flags_hex']):
         open_flag_binary.append(int(row['flags_hex'], 16))
