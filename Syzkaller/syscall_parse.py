@@ -21,7 +21,7 @@ syscalls = ["open","openat","creat","openat2","read","pread64","write","pwrite64
 for call in syscalls:
     mydict[call] = [[]]
 
-
+# List all the webpage files in the directory
 for filename in os.listdir(directory):
     file = os.path.join(directory, filename)
     with open(file) as f:
@@ -29,9 +29,12 @@ for filename in os.listdir(directory):
 
     for call in syscalls:
         for line in lines:
+            # Parse Syzkaller syscall sequence
             call_str, rest_str = between_brackets(line)
 
+            # If the call_str matches a call in the "syscalls"
             if call in call_str:
+                # Append syscall name and all the arguments as a sub-list
                 mydict[call].append([call_str] + rest_str.split(','))
     
 
