@@ -211,3 +211,45 @@ MCFS_WRITE_SIZE = [0,
                     30720,
                     31121,
                     64409]
+
+# Syzkaller Specific
+
+# We are focusing on SYZKALLER_SYSCALLS related to file systems and supported by IOCov for now
+# Note that readv, writev, preadv, pwritev, preadv2, pwritev2 are not handled
+SYZKALLER_SYSCALLS = ['open', 'openat', 'creat', 'openat2', 
+            'read', 'pread64', 'write', 'pwrite64',
+            'lseek', 'llseek', 'truncate', 'ftruncate', 
+            'mkdir', 'mkdirat', 'chmod', 'fchmod', 'fchmodat', 
+            'close', 'close_range', 'chdir', 'fchdir', 
+            'setxattr', 'lsetxattr', 'fsetxattr', 
+            'getxattr', 'lgetxattr', 'fgetxattr']
+
+SYZKALLER_HEADERS = {
+    'open': ['syscall', 'pathname', 'flags', 'mode'],
+    'openat': ['syscall', 'dirfd', 'pathname', 'flags', 'mode'],
+    'creat': ['syscall', 'pathname', 'mode'],
+    'openat2': ['syscall', 'dirfd', 'pathname', 'how', 'size'],
+    'read': ['syscall', 'fd', 'buf', 'count'],
+    'pread64': ['syscall', 'fd', 'buf', 'count', 'offset'],
+    'write': ['syscall', 'fd', 'buf', 'count'],
+    'pwrite64': ['syscall', 'fd', 'buf', 'count', 'offset'],
+    'lseek': ['syscall', 'fd', 'offset', 'whence'],
+    'llseek': ['syscall', 'fd', 'offset_high', 'offset_low', 'result', 'whence'],
+    'truncate': ['syscall', 'path', 'length'],
+    'ftruncate': ['syscall', 'fd', 'length'],
+    'mkdir': ['syscall', 'pathname', 'mode'],
+    'mkdirat': ['syscall', 'dirfd', 'pathname', 'mode'],
+    'chmod': ['syscall', 'pathname', 'mode'],
+    'fchmod': ['syscall', 'fd', 'mode'],
+    'fchmodat': ['syscall', 'dirfd', 'pathname', 'mode', 'flags'],
+    'close': ['syscall', 'fd'],
+    'close_range': ['syscall', 'first', 'last', 'flags'],
+    'chdir': ['syscall', 'path'],
+    'fchdir': ['syscall', 'fd'],
+    'setxattr': ['syscall', 'path', 'name', 'value', 'size', 'flags'],
+    'lsetxattr': ['syscall', 'path', 'name', 'value', 'size', 'flags'],
+    'fsetxattr': ['syscall', 'fd', 'name', 'value', 'size', 'flags'],
+    'getxattr': ['syscall', 'path', 'name', 'value', 'size'],
+    'lgetxattr': ['syscall', 'path', 'name', 'value', 'size'],
+    'fgetxattr': ['syscall', 'fd', 'name', 'value', 'size']
+}
