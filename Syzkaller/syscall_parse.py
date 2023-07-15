@@ -19,6 +19,7 @@ directory = '/home/ubuntu/syzkaller/yf-syz-webdump-2023-0706/Syzwebs-18mins-2023
 mydict = {}
 
 # We are focusing on SYZKALLER_SYSCALLS related to file systems and supported by IOCov for now
+# Note that readv, writev, preadv, pwritev, preadv2, pwritev2 are not handled
 SYZKALLER_SYSCALLS = ['open', 'openat', 'creat', 'openat2', 
             'read', 'pread64', 'write', 'pwrite64',
             'lseek', 'llseek', 'truncate', 'ftruncate', 
@@ -59,7 +60,7 @@ SYZKALLER_HEADERS = {
 
 # Populate header for each syscall
 for call in SYZKALLER_SYSCALLS:
-    mydict[call] = [[]]
+    mydict[call] = [SYZKALLER_HEADERS[call]]
 
 # List all the webpage files in the directory
 for filename in os.listdir(directory):
@@ -73,8 +74,11 @@ for filename in os.listdir(directory):
             call_str, rest_str = between_brackets(line)
 
             # If the call_str matches a call in the "SYZKALLER_SYSCALLS"
+            inter_call = [word.strip() for word in call_str.split('=')][-1]
+            extracted_call = [word.strip() for word in inter_call.split('$')][0]
+
             # Caveat: may contain duplicate items for syscall variants (e.g., open, openat)
-            if call in call_str:
+            if call == extracted_call:
                 # Append syscall name and all the arguments as a sub-list
                 # Ex. append: ['r0 = openat$vcs', '0xffffffffffffff9c', ' &(0x7f0000000000)', ' 0x0', ' 0x0']
                 mydict[call].append([call_str] + rest_str.split(','))
@@ -87,4 +91,4 @@ for call in SYZKALLER_SYSCALLS:
     for row in mydict[call]:
         sheet.append(row)
 
-workbook.save('SYZKALLER_SYSCALLS.xlsx')
+workbook.save('raw-syzkaller-syscalls.xlsx')
