@@ -159,6 +159,18 @@ all_truncate_length = [int(hex_str.strip(), 16) for hex_str in all_truncate_leng
 
 all_input_cov['truncate']['length'] = list_to_count_dict(all_truncate_length)
 
+# Handle mkdir
+
+### Handle mkdir mode
+mkdir_mode = df_mkdir['mode'].tolist()
+mkdirat_mode = df_mkdirat['mode'].tolist()
+
+all_mkdir_mode_hex = mkdir_mode + mkdirat_mode
+
+all_mkdir_mode = [int(hex_str.strip(), 16) for hex_str in all_mkdir_mode_hex]
+
+all_input_cov['mkdir']['mode'] = list_to_count_dict(all_mkdir_mode)
+
 
 print('all_input_cov: ', all_input_cov)
 
