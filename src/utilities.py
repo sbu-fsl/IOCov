@@ -103,4 +103,12 @@ def list_to_count_dict(input_list):
         else:
             input_dict[elem] = 1
     return input_dict
-    
+
+def list_to_whence_dict(whence_list):
+    whence_dict = {}
+    for whence in ALL_LSEEK_WHENCES:
+        whence_dict[whence] = 0
+    for whence_dec in whence_list:
+        if whence_dec < len(ALL_LSEEK_WHENCES):
+            whence_dict[LSEEK_WHENCE_NUMS[whence_dec]] += 1
+    return whence_dict
