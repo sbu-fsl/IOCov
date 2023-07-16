@@ -147,6 +147,19 @@ all_lseek_whence = [int(hex_str.strip(), 16) for hex_str in all_lseek_whence_hex
 
 all_input_cov['lseek']['whence'] = list_to_whence_dict(all_lseek_whence)
 
+# Handle truncate
+
+### Handle truncate length
+truncate_length = df_truncate['length'].tolist()
+ftruncate_length = df_ftruncate['length'].tolist()
+
+all_truncate_length_hex = truncate_length + ftruncate_length
+
+all_truncate_length = [int(hex_str.strip(), 16) for hex_str in all_truncate_length_hex]
+
+all_input_cov['truncate']['length'] = list_to_count_dict(all_truncate_length)
+
+
 print('all_input_cov: ', all_input_cov)
 
 
