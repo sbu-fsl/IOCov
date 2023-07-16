@@ -95,6 +95,24 @@ all_input_cov['open']['mode'] = list_to_count_dict(all_open_mode)
 
 # Handle read
 
+### Handle read count
+read_count = df_read['count'].tolist()
+pread64_count = df_pread64['count'].tolist()
+
+all_read_count_hex = read_count + pread64_count
+
+all_read_count = [int(hex_str.strip(), 16) for hex_str in all_read_count_hex]
+
+all_input_cov['read']['count'] = list_to_count_dict(all_read_count)
+
+### Handle read offset
+all_read_offset_hex = df_pread64['offset'].tolist()
+
+all_read_offset = [int(hex_str.strip(), 16) for hex_str in all_read_offset_hex]
+
+all_input_cov['read']['offset'] = list_to_count_dict(all_read_offset)
+
+
 
 
 
