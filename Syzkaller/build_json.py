@@ -211,6 +211,17 @@ all_setxattr_flags = [int(hex_str.strip(), 16) for hex_str in all_setxattr_flags
 
 all_input_cov['setxattr']['flags'] = list_to_setxattr_flags_dict(all_setxattr_flags)
 
+# Handle getxattr
+
+getxattr_size = df_getxattr['size'].tolist()
+lgetxattr_size = df_lgetxattr['size'].tolist()
+fgetxattr_size = df_fgetxattr['size'].tolist()
+
+all_getxattr_size_hex = getxattr_size + lgetxattr_size + fgetxattr_size
+
+all_getxattr_size = [int(hex_str.strip(), 16) for hex_str in all_getxattr_size_hex]
+
+all_input_cov['getxattr']['size'] = list_to_count_dict(all_getxattr_size)
 
 
 print('all_input_cov: ', all_input_cov)
