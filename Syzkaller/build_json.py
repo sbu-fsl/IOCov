@@ -113,8 +113,24 @@ all_read_offset = [int(hex_str.strip(), 16) for hex_str in all_read_offset_hex]
 all_input_cov['read']['offset'] = list_to_count_dict(all_read_offset)
 
 
+# Handle write
 
+### Handle write count
+write_count = df_write['count'].tolist()
+pwrite64_count = df_pwrite64['count'].tolist()
 
+all_write_count_hex = write_count + pwrite64_count
+
+all_write_count = [int(hex_str.strip(), 16) for hex_str in all_write_count_hex]
+
+all_input_cov['write']['count'] = list_to_count_dict(all_write_count)
+
+### Handle write offset
+all_write_offset_hex = df_pwrite64['offset'].tolist()
+
+all_write_offset = [int(hex_str.strip(), 16) for hex_str in all_write_offset_hex]
+
+all_input_cov['write']['offset'] = list_to_count_dict(all_write_offset)
 
 print('all_input_cov: ', all_input_cov)
 
