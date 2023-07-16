@@ -1,77 +1,79 @@
 import pandas as pd
 import json
 import sys
+# Make sure you are in Syzkaller folder
+sys.path.append('../src')
+from constants import *
 
-OPEN_BIT_FLAGS = {
-    0: 'O_RDONLY',
-    3: 'O_ACCMODE',
-    1: 'O_WRONLY',
-    2: 'O_RDWR',
-    100: 'O_CREAT',
-    200: 'O_EXCL',
-    400: 'O_NOCTTY',
-    1000: 'O_TRUNC',
-    2000: 'O_APPEND',
-    4000: 'O_NONBLOCK',
-    10000: 'O_DSYNC',
-    20000: 'FASYNC',
-    40000: 'O_DIRECT',
-    100000: 'O_LARGEFILE',
-    200000: 'O_DIRECTORY',
-    400000: 'O_NOFOLLOW',
-    1000000: 'O_NOATIME',
-    2000000: 'O_CLOEXEC',
-    4000000: '__O_SYNC',
-    10000000: 'O_PATH',
-    20000000: '__O_TMPFILE'
-    }
-
-LSEEK_WHENCE_NUMS = {
-    0: 'SEEK_SET',
-    1: 'SEEK_CUR',
-    2: 'SEEK_END',
-    3: 'SEEK_DATA',
-    4: 'SEEK_HOLE'
-}
-
-SETXATTR_FLAGS_NUMS = {
-    0: 'XATTR_DEFAULT',
-    1: 'XATTR_CREATE',
-    2: 'XATTR_REPLACE'
-}
+xlsx_file = 'raw-syzkaller-syscalls.xlsx'
 
 # Fetch each syscall sheet as a data frame 
-# open and its variants (openat: open/opanat/openat2; creat: creat)
-df_openat = pd.read_excel('syzkaller-syscalls.xlsx', sheet_name='openat')
-df_creat = pd.read_excel('syzkaller-syscalls.xlsx', sheet_name='creat')
+
+# open and its variants
+df_open = pd.read_excel(xlsx_file, sheet_name='open')
+df_openat = pd.read_excel(xlsx_file, sheet_name='openat')
+df_creat = pd.read_excel(xlsx_file, sheet_name='creat')
+df_openat2 = pd.read_excel(xlsx_file, sheet_name='openat2')
 
 # read and its variants 
-df_read = pd.read_excel('syzkaller-syscalls.xlsx', sheet_name='read')
-df_pread64 = pd.read_excel('syzkaller-syscalls.xlsx', sheet_name='pread64')
+df_read = pd.read_excel(xlsx_file, sheet_name='read')
+df_pread64 = pd.read_excel(xlsx_file, sheet_name='pread64')
 
 # write and its variants 
-df_write = pd.read_excel('syzkaller-syscalls.xlsx', sheet_name='write')
-df_pwrite64 = pd.read_excel('syzkaller-syscalls.xlsx', sheet_name='pwrite64')
+df_write = pd.read_excel(xlsx_file, sheet_name='write')
+df_pwrite64 = pd.read_excel(xlsx_file, sheet_name='pwrite64')
 
-# TODO: check if other syscalls lack variants
-df_lseek = pd.read_excel('syzkaller-syscalls.xlsx', sheet_name='lseek')
-df_truncate = pd.read_excel('syzkaller-syscalls.xlsx', sheet_name='truncate')
-df_mkdir = pd.read_excel('syzkaller-syscalls.xlsx', sheet_name='mkdir')
-df_chmod = pd.read_excel('syzkaller-syscalls.xlsx', sheet_name='chmod')
-df_close = pd.read_excel('syzkaller-syscalls.xlsx', sheet_name='close')
-df_setxattr = pd.read_excel('syzkaller-syscalls.xlsx', sheet_name='setxattr')
-df_getxattr = pd.read_excel('syzkaller-syscalls.xlsx', sheet_name='getxattr')
+# TODO: llseek not captured by Syzkaller config
+# lseek and its variants 
+df_lseek = pd.read_excel(xlsx_file, sheet_name='lseek')
+df_llseek = pd.read_excel(xlsx_file, sheet_name='llseek')
+
+# truncate and its variants
+df_truncate = pd.read_excel(xlsx_file, sheet_name='truncate')
+df_ftruncate = pd.read_excel(xlsx_file, sheet_name='ftruncate')
+
+# mkdir and its variants
+df_mkdir = pd.read_excel(xlsx_file, sheet_name='mkdir')
+df_mkdirat = pd.read_excel(xlsx_file, sheet_name='mkdirat')
+
+# chmod and its variants
+df_chmod = pd.read_excel(xlsx_file, sheet_name='chmod')
+df_fchmod = pd.read_excel(xlsx_file, sheet_name='fchmod')
+df_fchmodat = pd.read_excel(xlsx_file, sheet_name='fchmodat')
+
+# NO NEED TO HANDLE close and its variants, chdir and its variants
+# df_close = pd.read_excel(xlsx_file, sheet_name='close')
+# df_close_range = pd.read_excel(xlsx_file, sheet_name='close_range')
+
+# setxattr and its variants
+df_setxattr = pd.read_excel(xlsx_file, sheet_name='setxattr')
+df_lsetxattr = pd.read_excel(xlsx_file, sheet_name='lsetxattr')
+df_fsetxattr = pd.read_excel(xlsx_file, sheet_name='fsetxattr')
+
+# getxattr and its variants
+df_getxattr = pd.read_excel(xlsx_file, sheet_name='getxattr')
+df_lgetxattr = pd.read_excel(xlsx_file, sheet_name='lgetxattr')
+df_fgetxattr = pd.read_excel(xlsx_file, sheet_name='fgetxattr')
 
 # hex_str = "F"
 # binary_str = int(hex_str, 16)
 # print(binary_str)
+
+# print('df_open: \n', df_open)
+# print('--------------------------------')
+# print('df_openat: \n', df_openat)
+# print('--------------------------------')
+# print('df_creat: \n', df_creat)
+# print('--------------------------------')
+# print('df_openat2: \n', df_openat2)
+# print('--------------------------------')
+# sys.exit()
 
 ## handle open
 
 open_flag_binary = []
 open_mode_int = []
 
-# TODO: Do we need to manually add "flags_hex" and "mode_hex" headers on xlsx sheets?
 for index, row in df_openat.iterrows():
     if('0x' not in row['flags_hex']):
         open_flag_binary.append(int(row['flags_hex'], 16))
