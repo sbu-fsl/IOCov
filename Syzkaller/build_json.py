@@ -171,9 +171,21 @@ all_mkdir_mode = [int(hex_str.strip(), 16) for hex_str in all_mkdir_mode_hex]
 
 all_input_cov['mkdir']['mode'] = list_to_count_dict(all_mkdir_mode)
 
+# Handle chmod
+
+### Handle chmod mode
+
+chmod_mode = df_chmod['mode'].tolist()
+fchmod_mode = df_fchmod['mode'].tolist()
+fchmodat_mode = df_fchmodat['mode'].tolist()
+
+all_chmod_mode_hex = chmod_mode + fchmod_mode + fchmodat_mode
+
+all_chmod_mode = [int(hex_str.strip(), 16) for hex_str in all_chmod_mode_hex]
+
+all_input_cov['chmod']['mode'] = list_to_count_dict(all_chmod_mode)
+
 
 print('all_input_cov: ', all_input_cov)
-
-
 
 
