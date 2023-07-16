@@ -80,9 +80,26 @@ all_open_flags_hex = open_flags + openat_flags
 all_open_flags = [int(hex_str.strip(), 16) for hex_str in all_open_flags_hex]
 ##### Handle open flags for creat() specifically 
 all_open_flags += [CREAT_FLAG_DEC] * len(df_creat)
-
-
-
+all_input_cov['open']['flags'] = interpret_open_flags(all_open_flags)
 
 ### Handle open mode
+open_mode = df_open['mode'].tolist()
+openat_mode = df_openat['mode'].tolist()
+creat_mode = df_creat['mode'].tolist()
+
+all_open_mode_hex = open_mode + openat_mode + creat_mode
+
+all_open_mode = [int(hex_str.strip(), 16) for hex_str in all_open_mode_hex]
+
+all_input_cov['open']['mode'] = list_to_count_dict(all_open_mode)
+
+# Handle read
+
+
+
+
+print('all_input_cov: ', all_input_cov)
+
+
+
 

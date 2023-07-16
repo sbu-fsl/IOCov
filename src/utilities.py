@@ -76,3 +76,31 @@ def init_output_cov():
     for sc in ALL_SYSCALLS:
         output_cov[sc] = {}
     return output_cov
+
+# Transform a list of decimal open flags to a dict with individual flags
+def interpret_open_flags(open_flags_dec):
+    flag_dict = {}
+    for flag in ALL_OPEN_FLAGS:
+        flag_dict[flag] = 0  
+    for flag_dec in open_flags_dec:
+        if flag_dec & 1 == 0:
+            flag_dict['O_RDONLY'] += 1
+        for each_bit in OPEN_BIT_FLAGS:
+            if flag_dec & each_bit == each_bit:
+                flag_dict[OPEN_BIT_FLAGS[each_bit]] += 1         
+    return flag_dict
+
+
+# Given a list of elements, convert it to a dict
+# Key: each unique element (convert num/int to str)
+# Value: the frequency of each element
+# E.g., for open mode
+def list_to_count_dict(input_list):
+    input_dict = {}
+    for elem in input_list:
+        if elem in input_dict.keys():
+            input_dict[elem] += 1
+        else:
+            input_dict[elem] = 1
+    return input_dict
+    
