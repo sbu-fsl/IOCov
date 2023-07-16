@@ -42,7 +42,8 @@ for filename in os.listdir(directory):
             extracted_call = [word.strip() for word in inter_call.split('$')][0]
 
             # Caveat: may contain duplicate items for syscall variants (e.g., open, openat)
-            if call == extracted_call:
+            # Only retain the syscalls with the exact number of arguments
+            if call == extracted_call and len(rest_str.split(',')) + 1 == len(SYZKALLER_HEADERS[call]):
                 # Append syscall name and all the arguments as a sub-list
                 # Ex. append: ['r0 = openat$vcs', '0xffffffffffffff9c', ' &(0x7f0000000000)', ' 0x0', ' 0x0']
                 mydict[call].append([call_str] + rest_str.split(','))
