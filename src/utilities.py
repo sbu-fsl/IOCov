@@ -112,3 +112,12 @@ def list_to_whence_dict(whence_list):
         if whence_dec < len(ALL_LSEEK_WHENCES):
             whence_dict[LSEEK_WHENCE_NUMS[whence_dec]] += 1
     return whence_dict
+
+def list_to_setxattr_flags_dict(flags_list):
+    flags_dict = {}
+    for flags in ALL_SETXATTR_FLAGS:
+        flags_dict[flags] = 0
+    for flags_dec in flags_list:
+        if flags_dec < len(ALL_SETXATTR_FLAGS):
+            flags_dict[SETXATTR_FLAGS_NUMS[flags_dec]] += 1
+    return flags_dict

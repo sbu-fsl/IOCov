@@ -185,6 +185,33 @@ all_chmod_mode = [int(hex_str.strip(), 16) for hex_str in all_chmod_mode_hex]
 
 all_input_cov['chmod']['mode'] = list_to_count_dict(all_chmod_mode)
 
+# Handle setxattr
+
+### Handle setxattr mode
+
+setxattr_size = df_setxattr['size'].tolist()
+lsetxattr_size = df_lsetxattr['size'].tolist()
+fsetxattr_size = df_fsetxattr['size'].tolist()
+
+all_setxattr_size_hex = setxattr_size + lsetxattr_size + fsetxattr_size
+
+all_setxattr_size = [int(hex_str.strip(), 16) for hex_str in all_setxattr_size_hex]
+
+all_input_cov['setxattr']['size'] = list_to_count_dict(all_setxattr_size)
+
+### Handle setxattr flags
+
+setxattr_flags = df_setxattr['flags'].tolist()
+lsetxattr_flags = df_lsetxattr['flags'].tolist()
+fsetxattr_flags = df_fsetxattr['flags'].tolist()
+
+all_setxattr_flags_hex = setxattr_flags + lsetxattr_flags + fsetxattr_flags
+
+all_setxattr_flags = [int(hex_str.strip(), 16) for hex_str in all_setxattr_flags_hex]
+
+all_input_cov['setxattr']['flags'] = list_to_setxattr_flags_dict(all_setxattr_flags)
+
+
 
 print('all_input_cov: ', all_input_cov)
 
