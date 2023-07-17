@@ -2,7 +2,14 @@
 
 ## Workflow
 
-Basically, the workflow of IOCov 
+Basically, the workflow of IOCov includes tracing, parsing, and plotting.
+
+- Tracing: tracing methods depend on the file system testers.  We use 
+    - `xfstests` and `CrashMonkey`: LTTng
+    - `MCFS`: own MCFS logs 
+    - `Syzkaller`: Syzkaller's [Syscall descriptions](https://github.com/google/syzkaller/blob/master/docs/syscall_descriptions.md). Download webpages of Syzkaller.
+- Parsing: transforming raw syscall logs to pickle files with dictionaries that contain input/output partitions.
+- Plotting: visualization of input and output coverage. 
 
 ## Usage
 
@@ -33,4 +40,53 @@ we should edit three fields in the `iocov-main.py`: `default_plot_name`,
   is passed to IOCov parser so IOCov reads this log line by line and 
   parse the information to obtain the dictionary (pkl/json files) for 
   further analysis and plotting. 
+
+After editting these global variables, we run the following command to execute 
+IOCov parser if parsing is required:
+
+```bash
+python3 iocov-main.py --parse
+```
+
+When we only have the pickle files for the parsed input/output coverage
+but no json file exists, 
+we run the following command to produce corresponding json files:
+
+```bash
+python3 iocov-main.py --no-parse --json
+```
+
+If the input/output coverage is already parsed (pkl files are available),
+we run IOCov plotter to get the plots to visualize input and output coverage 
+for various syscalls and arguments/returns:
+
+```bash
+python3 iocov-main.py --no-parse --plot
+```
+
+Run the following command to also plot unfiltered input coverage with a 
+stacked bar plot format:
+
+```bash
+python3 iocov-main.py --no-parse --plot --plotunfilter
+```
+
+Run the following command to plot input coverage only:
+
+```bash
+python3 iocov-main.py --no-parse --plot -i
+```
+
+Run the following command to plot output coverage only:
+
+```bash
+python3 iocov-main.py --no-parse --plot -o
+```
+
+The generated plots (PDF files) are stored to the `./Assets/Input-Figures`
+and `./Assets/Output-Figures` directories.
+
+## Syzkaller
+
+Parsing Syzkaller syscalls is documented at [README](../Syzkaller/README.md).
 
