@@ -11,6 +11,12 @@ Basically, the workflow of IOCov includes tracing, parsing, and plotting.
 - Parsing: transforming raw syscall logs to pickle files with dictionaries that contain input/output partitions.
 - Plotting: visualization of input and output coverage. 
 
+## Prerequisites
+
+### Python packages
+
+pandas, matplotlib
+
 ## Usage
 
 The main entry of the parser and plotter is `iocov-main.py`.  The 
@@ -91,3 +97,11 @@ and `./Assets/Output-Figures` directories.
 
 Parsing Syzkaller syscalls is documented at [README](../Syzkaller/README.md).
 
+To plot Syzkaller input coverage, change default_plot_name to Syzkaller
+prefix/suffix (e.g., `'syzkaller_18mins_2023_0707_0410'`) and run the following 
+command.  **Before running `iocov-main.py`, copy the input_cov.pkl to unfilter_input_cov.pkl**.
+**This can actually be fixed to handle unfiltered input coverage.**
+
+```bash
+python3 iocov-main.py --no-parse --plot -i
+```

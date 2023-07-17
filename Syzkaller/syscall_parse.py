@@ -18,7 +18,7 @@ def between_brackets(str):
 
     return str[:index1], str[index1+1:index2]
 
-directory = '/home/ubuntu/syzkaller/yf-syz-webdump-2023-0706/Syzwebs-18mins-2023-0707-0410/only-inputs'
+input_dir = '/home/ubuntu/syzkaller/yf-syz-webdump-2023-0706/Syzwebs-18mins-2023-0707-0410/only-inputs'
 
 # mydict key: every system call name, value: 2d-list
 # 2d-list: list of each syscall name and arguments
@@ -29,8 +29,8 @@ for call in SYZKALLER_SYSCALLS:
     mydict[call] = [SYZKALLER_HEADERS[call]]
 
 # List all the webpage files in the directory
-for filename in os.listdir(directory):
-    file = os.path.join(directory, filename)
+for filename in os.listdir(input_dir):
+    file = os.path.join(input_dir, filename)
     with open(file) as f:
         lines = f.readlines()
 
