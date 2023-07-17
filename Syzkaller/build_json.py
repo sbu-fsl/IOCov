@@ -2,11 +2,14 @@
 
 import pandas as pd
 import json
+import pickle
 import sys
 # Make sure you are in Syzkaller folder
 sys.path.append('../src')
 from constants import *
 from utilities import *
+
+name_suffix = '18mins_2023_0707_0410'
 
 xlsx_file = 'raw-syzkaller-syscalls.xlsx'
 
@@ -223,7 +226,10 @@ all_getxattr_size = [int(hex_str.strip(), 16) for hex_str in all_getxattr_size_h
 
 all_input_cov['getxattr']['size'] = list_to_count_dict(all_getxattr_size)
 
+# Dump the "all_input_cov" to both json file and pickle file
+with open('input_cov_syzkaller_{}.pkl'.format(name_suffix), 'wb') as f:
+    pickle.dump(all_input_cov, f)
 
-print('all_input_cov: ', all_input_cov)
-
-
+with open('input_cov_syzkaller_{}.json'.format(name_suffix), 'w') as fout:
+    input_cov_str = json.dumps(all_input_cov, indent=4)
+    print(input_cov_str, file=fout)
