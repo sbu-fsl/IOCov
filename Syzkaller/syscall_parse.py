@@ -18,7 +18,8 @@ def between_brackets(str):
 
     return str[:index1], str[index1+1:index2]
 
-input_dir = '/home/ubuntu/syzkaller/yf-syz-webdump-2023-0706/Syzwebs-18mins-2023-0707-0410/only-inputs'
+input_dir = '/home/ubuntu/syzkaller/yf-syz-webdump-2023-0706/Syzwebs-26hours-2023-0708-0548/only-inputs'
+xlsx_suffix = input_dir.split('/')[-2].split('-', 1)[-1]
 
 # mydict key: every system call name, value: 2d-list
 # 2d-list: list of each syscall name and arguments
@@ -58,4 +59,4 @@ for call in SYZKALLER_SYSCALLS:
     for row in mydict[call]:
         sheet.append(row)
 
-workbook.save('raw-syzkaller-syscalls.xlsx')
+workbook.save('raw-syzkaller-syscalls-{}.xlsx'.format(xlsx_suffix))
