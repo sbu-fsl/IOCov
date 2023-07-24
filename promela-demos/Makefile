@@ -6,4 +6,6 @@ all: loop-prob.pml
 
 run: all
 	./pan
-	
+
+clean:
+	rm pan*
