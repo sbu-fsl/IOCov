@@ -9,6 +9,7 @@ import sys
 
 need_search = True
 need_post_testing = False
+print_all = False
 
 # Combine the kernel occurrences with file system testing into a csv file
 post_header = ['Xfstests', 
@@ -27,7 +28,7 @@ linux_dir = '/mcfs/Linux_Kernel_Install/linux-6.3'
 
 # Kernel directories to search
 linux_dirs = [linux_dir, 
-                linux_dir + '/ext4', 
+                linux_dir + '/fs/ext4', 
                 linux_dir + '/fs/xfs', 
                 linux_dir + '/fs/btrfs',
                 linux_dir + '/fs']
@@ -37,7 +38,10 @@ labels = ['All-Linux-src',
             'Ext4-src',
             'XFS-src',
             'BtrFS-src',
-            'FS-src']
+            'All-FS-src']
+
+percent_suffix = '-percent'
+percent_labels = [ label + percent_suffix for label in labels ]
 
 # Search for C source files
 pattern = '*.c'
@@ -74,21 +78,23 @@ if need_search:
                     for err in err_list:
                         count = contents.count(err)
                         err_cnt[err] += count
-
-        print(labels[i] + ': ')
-        print(err_cnt)
-        print('===============')
+        if print_all:
+            print(labels[i] + ': ')
+            print(err_cnt)
+            print('===============')
         with open('{}_err_count.pkl'.format(labels[i]), 'wb') as f:
             pickle.dump(err_cnt, f)
 
 # Read kernel search pkl files 
-all_err_cnt = []
+# all_err_cnt: key: each label (csv header); value: dict of error code count
+#       key: error code; value: count
+all_err_cnt = {}
 for i in range(len(labels)):
     with open('{}_err_count.pkl'.format(labels[i]), 'rb') as f:
         err_cnt = pickle.load(f)
-        all_err_cnt.append(err_cnt)
+        all_err_cnt[labels[i]] = err_cnt
 
-all_post_err_cnt = []
+all_post_err_cnt = {}
 if need_post_testing:
     for i in range(len(post_header)):
         post_err_cnt = {}
@@ -101,16 +107,29 @@ if need_post_testing:
                     if ret < 0 and abs(ret) in errno_err_dict.keys():
                         post_err_cnt[errno_err_dict[abs(ret)]] += cnt
 
-    all_post_err_cnt.append(post_err_cnt)
+        all_post_err_cnt[post_header[i]] = post_err_cnt
 
     # Append error code count from file system testing
-    all_err_cnt += all_post_err_cnt
+    all_err_cnt.update(all_post_err_cnt)
 
     # Append error code header from file system testing
     labels += post_header
 
+# print('all_err_cnt: \n', all_err_cnt)
+
+# Count total occurrences of each error code
+# total_err_cnt: key: each label (csv header); value: total count across all the error codes
+total_err_cnt = {}
+for label in labels:
+    total_cnt = 0
+    for err_str in err_list:
+        total_cnt += all_err_cnt[label][err_str]
+    total_err_cnt[label] = total_cnt
+
+# print('total_err_cnt: ', total_err_cnt)
+
 # header = ['Errno', 'Error_Code'] + labels
-header = ['No.', 'Errno'] + labels
+header = ['No.', 'Errno'] + labels + percent_labels
 with open('linux_errs_summary.csv', 'w') as f:
     writer = csv.writer(f)
     # write the header
@@ -121,7 +140,10 @@ with open('linux_errs_summary.csv', 'w') as f:
         data.append(err_no)
         data.append(err_code)
         for i in range(len(labels)):
-            data.append(all_err_cnt[i][err_code])
+            data.append(all_err_cnt[labels[i]][err_code])
+        # Calculate the percentage
+        for i in range(len(labels)):
+            data.append('{:.2f} %'.format(all_err_cnt[labels[i]][err_code] / total_err_cnt[labels[i]] * 100))
         # write the data
         writer.writerow(data)
 
