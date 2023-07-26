@@ -16,3 +16,6 @@ __pycache__/
 
 # Promela
 pan*
+
+# Kernel analysis
+*.csv
