@@ -9,6 +9,7 @@ sys.path.insert(1, '../src')
 from constants import ALL_OPEN_FLAGS
 
 need_search = True
+print_all = False
 
 # All the open flags (directly from ../src/constants.py)
 # ALL_OPEN_FLAGS: all open flags 21 in a list
@@ -43,7 +44,7 @@ if need_search:
         open_flag_cnt = {}
         for flag in ALL_OPEN_FLAGS:
             open_flag_cnt[flag] = 0
-        for root, dirs, files in os.walk(linux_dir):
+        for root, dirnames, filenames in os.walk(linux_dir):
             for fn in fnmatch.filter(filenames, pattern):
                 abs_fn = os.path.abspath(os.path.join(root, fn))
                 with open(abs_fn, 'r') as f:
@@ -73,7 +74,7 @@ for label in labels:
         total_cnt += all_open_flag_cnt[label][flag]
     total_open_flag_cnt[label] = total_cnt
 
-header = ['Open_Flag'] + labels 
+header = ['Open_Flag'] + labels + percent_labels
 
 with open('linux_open_flags_summary.csv', 'w') as f:
     writer = csv.writer(f)
