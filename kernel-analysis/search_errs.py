@@ -129,7 +129,7 @@ for label in labels:
 # print('total_err_cnt: ', total_err_cnt)
 
 # header = ['Errno', 'Error_Code'] + labels
-header = ['No.', 'Errno'] + labels + percent_labels
+header = ['Errno', 'Error_Code'] + labels + percent_labels
 with open('linux_errs_summary.csv', 'w') as f:
     writer = csv.writer(f)
     # write the header
