@@ -13,18 +13,24 @@ need_search = False
 # linux_dir = '/mcfs/Linux_Kernel_Install/linux-stable/fs/ext4'
 # linux_dir = '/mcfs/Linux_Kernel_Install/linux-stable'
 
-linux_dirs = ['/mcfs/Linux_Kernel_Install/linux-stable', 
-                '/mcfs/Linux_Kernel_Install/linux-stable/fs/ext4', 
-                '/mcfs/Linux_Kernel_Install/linux-stable/fs/xfs', 
-                '/mcfs/Linux_Kernel_Install/linux-stable/fs/btrfs',
-                '/mcfs/Linux_Kernel_Install/linux-stable/fs']
+# yifeilatest1
+linux_dir = '/mcfs/Linux_Kernel_Install/linux-6.3'
 
+# Kernel directories to search
+linux_dirs = [linux_dir, 
+                linux_dir + '/ext4', 
+                linux_dir + '/fs/xfs', 
+                linux_dir + '/fs/btrfs',
+                linux_dir + '/fs']
+
+# csv header 
 labels = ['All-Linux-src',
             'Ext4-src',
             'XFS-src',
             'BtrFS-src',
             'FS-src']
 
+# Search for C source files
 pattern = '*.c'
 
 # List of all the error codes in string
@@ -39,6 +45,9 @@ for name in dir(errno):
 # print('err_list: ', err_list)
 # print('len(err_list): ', len(err_list))
 
+# If we need to search the kernel sources and obtain pkl files 
+# One label for each pkl file
+# If we don't need to search, we should already have these pkl files
 if need_search:
     for i in range(len(linux_dirs)):
         linux_dir = linux_dirs[i]
@@ -63,11 +72,14 @@ if need_search:
         with open('{}_err_count.pkl'.format(labels[i]), 'wb') as f:
             pickle.dump(err_cnt, f)
 
+# Combine the kernel occurrences with file system testing into a csv file
 post_header = ['Xfstests', 
                 'Crashmonkey']
 
+# Output pkl files for each file system testing
 post_pkl_files = ['output_cov_all_xfstests_xattrs.pkl', 
                     'output_cov_crashmonkey.pkl']
+
 
 all_post_err_cnt = []
 for i in range(len(post_header)):
@@ -83,14 +95,17 @@ for i in range(len(post_header)):
 
     all_post_err_cnt.append(post_err_cnt)
 
+# Read kernel search pkl files 
 all_err_cnt = []
 for i in range(len(labels)):
     with open('{}_err_count.pkl'.format(labels[i]), 'rb') as f:
         err_cnt = pickle.load(f)
         all_err_cnt.append(err_cnt)
 
+# Append error code count from file system testing
 all_err_cnt += all_post_err_cnt
 
+# Append error code header from file system testing
 labels += post_header
 # header = ['Errno', 'Error_Code'] + labels
 header = ['No.', 'Errno'] + labels
