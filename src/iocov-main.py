@@ -44,8 +44,10 @@ def main(args):
         output_only = args.ploto
         with open('input_cov_{}.pkl'.format(name_suffix), 'rb') as f:
             input_cov = pickle.load(f)
-        with open('output_cov_{}.pkl'.format(name_suffix), 'rb') as f:
-            output_cov = pickle.load(f)
+        # TODO: double-check if this workaround is sufficient 
+        if not input_only:
+            with open('output_cov_{}.pkl'.format(name_suffix), 'rb') as f:
+                output_cov = pickle.load(f)
         with open('unfilter_input_cov_{}.pkl'.format(name_suffix), 'rb') as f:
             unfilter_input_cov = pickle.load(f)
         # Write input/output cov to json files if needed

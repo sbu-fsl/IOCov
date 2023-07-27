@@ -104,6 +104,10 @@ command.
 For example, pickle file `input_cov_syzkaller_18mins_2023_0707_0410.pkl`
 
 **Before running `iocov-main.py`, copy the input_cov.pkl to unfilter_input_cov.pkl**.
+```bash
+cp input_cov_syzkaller_18mins_2023_0707_0410.pkl unfilter_input_cov_syzkaller_18mins_2023_0707_0410.pkl
+```
+
 **This can actually be fixed to handle unfiltered input coverage.**
 
 ```bash
@@ -121,6 +125,10 @@ command.
 For example, pickle file `input_cov_mcfs_10m_20230311_005751_2523268.pkl`
 
 **Before running `iocov-main.py`, copy the input_cov.pkl to unfilter_input_cov.pkl**.
+```bash
+cp input_cov_mcfs_10m_20230311_005751_2523268.pkl unfilter_input_cov_mcfs_10m_20230311_005751_2523268.pkl
+```
+
 **This can actually be fixed to handle unfiltered input coverage.**
 
 ```bash
