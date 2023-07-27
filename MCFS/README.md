@@ -15,6 +15,17 @@ and the pickle file from the same MCFS experiment as the sequence log (e.g., `in
 
 ### MCFS Log Syscall Parser
 
-The `parser-mcfs-log-iocov.py` script is the file to compute input and output coverage 
+The `parser-mcfs-log-input.py` script is the file to compute input coverage 
 for MCFS based its logs.  
 
+First, ensure that we have the `sequence*.log` file in the current directory (`./MCFS`),
+which could also be multiple sequence log files.  Before running `parser-mcfs-log-input.py`,
+we need to edit the `name_suffix` and `seq_log` to the corresponding MCFS experiments.  
+Then, run `parser-mcfs-log-input.py` to parse MCFS logs and by:
+
+```bash
+python3 parser-mcfs-log-input.py
+```
+
+Finally, we plot the Syzkaller input coverage by IOCov plotter, and the 
+document is at [IOCov README](../src/README.md).

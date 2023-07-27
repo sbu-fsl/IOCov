@@ -92,11 +92,22 @@ if __name__ == "__main__":
     ## Plot output coverage only
     #### python3 iocov-main.py --no-parse --plot -o
     
+    ## Crashmonkey example
     # default_plot_name = 'crashmonkey'
     # default_is_mcfs = False
     # default_lttng_log = 'crashmonkey-lttng-ext4-allrecur-614.log'
 
-    default_plot_name = 'xfstests_xattr_open_dump'
+    ## Syzkaller example
+    # default_plot_name = 'syzkaller_26hours_2023_0708_0548'
+
+    ## Xfstests example
+    # default_plot_name = 'xfstests_xattr_open_dump'
+
+    ## MCFS example
+    default_plot_name = 'mcfs_10m_20230311_005751_2523268'
+
+    # For computing IOCov accuracy
+    # default_plot_name = 'xfstests_xattr_open_dump'
     default_is_mcfs = False
     default_lttng_log = 'xfstests-lttng-all-related-ext4-all-xattrs-4633.log'
 

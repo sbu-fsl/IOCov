@@ -11,7 +11,7 @@ from utilities import *
 
 name_suffix = '18mins_2023_0707_0410'
 
-xlsx_file = 'raw-syzkaller-syscalls.xlsx'
+xlsx_file = 'raw-syzkaller-syscalls-18mins-2023-0707-0410.xlsx'
 
 # Fetch each syscall sheet as a data frame 
 
