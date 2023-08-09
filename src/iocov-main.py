@@ -44,8 +44,9 @@ def main(args):
         output_only = args.ploto
         with open('input_cov_{}.pkl'.format(name_suffix), 'rb') as f:
             input_cov = pickle.load(f)
-        with open('output_cov_{}.pkl'.format(name_suffix), 'rb') as f:
-            output_cov = pickle.load(f)
+        if not input_only:
+            with open('output_cov_{}.pkl'.format(name_suffix), 'rb') as f:
+                output_cov = pickle.load(f)
         with open('unfilter_input_cov_{}.pkl'.format(name_suffix), 'rb') as f:
             unfilter_input_cov = pickle.load(f)
         # Write input/output cov to json files if needed
@@ -96,7 +97,9 @@ if __name__ == "__main__":
     # default_is_mcfs = False
     # default_lttng_log = 'crashmonkey-lttng-ext4-allrecur-614.log'
 
-    default_plot_name = 'xfstests_xattr_open_dump'
+    # default_plot_name = 'syzkaller_26hours_2023_0708_0548'
+
+    default_plot_name = 'syzkaller_26hours_2023_0708_0548'
     default_is_mcfs = False
     default_lttng_log = 'xfstests-lttng-all-related-ext4-all-xattrs-4633.log'
 

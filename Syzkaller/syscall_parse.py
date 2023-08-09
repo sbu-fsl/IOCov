@@ -18,23 +18,24 @@ def between_brackets(str):
 
     return str[:index1], str[index1+1:index2]
 
-input_dir = '/home/ubuntu/syzkaller/yf-syz-webdump-2023-0706/Syzwebs-26hours-2023-0708-0548/only-inputs'
+input_dir = '/home/ubuntu/syzkaller/yf-syz-webdump-2023-0706/Syzwebs-40mins-2023-0809-0037/only-inputs'
 xlsx_suffix = input_dir.split('/')[-2].split('-', 1)[-1]
 
 # mydict key: every system call name, value: 2d-list
 # 2d-list: list of each syscall name and arguments
 mydict = {}
 
-# Populate header for each syscall
+# Populate xlsx headers for each syscall
 for call in SYZKALLER_SYSCALLS:
     mydict[call] = [SYZKALLER_HEADERS[call]]
 
-# List all the webpage files in the directory
+# List all the webpage files in the only-inputs directory
 for filename in os.listdir(input_dir):
     file = os.path.join(input_dir, filename)
     with open(file) as f:
         lines = f.readlines()
 
+    # For each syscall (belonging to each sheet) in one xlsx file
     for call in SYZKALLER_SYSCALLS:
         for line in lines:
             # Parse Syzkaller syscall sequence
@@ -45,11 +46,20 @@ for filename in os.listdir(input_dir):
             extracted_call = [word.strip() for word in inter_call.split('$')][0]
 
             # Caveat: may contain duplicate items for syscall variants (e.g., open, openat)
-            # Only retain the syscalls with the exact number of arguments
-            if call == extracted_call and len(rest_str.split(',')) + 1 == len(SYZKALLER_HEADERS[call]):
-                # Append syscall name and all the arguments as a sub-list
-                # Ex. append: ['r0 = openat$vcs', '0xffffffffffffff9c', ' &(0x7f0000000000)', ' 0x0', ' 0x0']
-                mydict[call].append([call_str] + rest_str.split(','))
+            # If syscall name matches
+            if call == extracted_call:
+                # Number of the arguments
+                args_num = len(rest_str.split(','))
+                # Exceptions --- open: 2 args or 3 args; openat: 3 args or 4 args
+                if call in SYZKALLER_ARGS_EXCEPTIONS:
+                    if (call == 'open' and (args_num == 2 or args_num == 3)) or (call == 'openat' and (args_num == 3 or args_num == 4)):
+                        mydict[call].append([call_str] + rest_str.split(','))
+                # Only retain the syscalls with the exact number of arguments
+                # +1 due to the "syscall" first header 
+                elif args_num + 1 == len(SYZKALLER_HEADERS[call]):
+                    # Append syscall name and all the arguments as a sub-list
+                    # Ex. append: ['r0 = openat$vcs', '0xffffffffffffff9c', ' &(0x7f0000000000)', ' 0x0', ' 0x0']
+                    mydict[call].append([call_str] + rest_str.split(','))
     
 
 for call in SYZKALLER_SYSCALLS:

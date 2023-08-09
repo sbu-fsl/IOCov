@@ -253,3 +253,6 @@ SYZKALLER_HEADERS = {
     'lgetxattr': ['syscall', 'path', 'name', 'value', 'size'],
     'fgetxattr': ['syscall', 'fd', 'name', 'value', 'size']
 }
+
+# Those syscalls may have different numbers of arguments
+SYZKALLER_ARGS_EXCEPTIONS = ['open', 'openat']

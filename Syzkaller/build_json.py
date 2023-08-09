@@ -9,9 +9,11 @@ sys.path.append('../src')
 from constants import *
 from utilities import *
 
-name_suffix = '18mins_2023_0707_0410'
+# name_suffix uses underscore "_"
+name_suffix = '40mins_2023_0809_0037'
 
-xlsx_file = 'raw-syzkaller-syscalls.xlsx'
+# xlsx_file uses hyphen "-"
+xlsx_file = 'raw-syzkaller-syscalls-40mins-2023-0809-0037.xlsx'
 
 # Fetch each syscall sheet as a data frame 
 
@@ -86,6 +88,10 @@ all_open_flags += [CREAT_FLAG_DEC] * len(df_creat)
 all_input_cov['open']['flags'] = interpret_open_flags(all_open_flags)
 
 ### Handle open mode
+# Remove empty open mode entries due to different argument numbers for open and openat
+df_open = df_open.dropna(subset=['mode'])
+df_openat = df_openat.dropna(subset=['mode'])
+
 open_mode = df_open['mode'].tolist()
 openat_mode = df_openat['mode'].tolist()
 creat_mode = df_creat['mode'].tolist()
