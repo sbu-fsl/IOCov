@@ -12,8 +12,12 @@ from utilities import *
 # name_suffix uses underscore "_"
 name_suffix = '40mins_2023_0809_0037'
 
+<<<<<<< HEAD
 # xlsx_file uses hyphen "-"
 xlsx_file = 'raw-syzkaller-syscalls-40mins-2023-0809-0037.xlsx'
+=======
+xlsx_file = 'raw-syzkaller-syscalls-18mins-2023-0707-0410.xlsx'
+>>>>>>> 5d033c8eba8ed2eead8a8a6e042ffb769ae765af
 
 # Fetch each syscall sheet as a data frame 
 

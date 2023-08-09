@@ -97,9 +97,38 @@ and `./Assets/Output-Figures` directories.
 
 Parsing Syzkaller syscalls is documented at [README](../Syzkaller/README.md).
 
-To plot Syzkaller input coverage, change default_plot_name to Syzkaller
+To plot Syzkaller input coverage, change `default_plot_name` in `iocov-main.py` to Syzkaller
 prefix/suffix (e.g., `'syzkaller_18mins_2023_0707_0410'`) and run the following 
-command.  **Before running `iocov-main.py`, copy the input_cov.pkl to unfilter_input_cov.pkl**.
+command.  
+**Make sure the `input_cov.pkl` file is renamed corresponding to `default_plot_name`:**
+For example, pickle file `input_cov_syzkaller_18mins_2023_0707_0410.pkl`
+
+**Before running `iocov-main.py`, copy the input_cov.pkl to unfilter_input_cov.pkl**.
+```bash
+cp input_cov_syzkaller_18mins_2023_0707_0410.pkl unfilter_input_cov_syzkaller_18mins_2023_0707_0410.pkl
+```
+
+**This can actually be fixed to handle unfiltered input coverage.**
+
+```bash
+python3 iocov-main.py --no-parse --plot -i
+```
+
+## MCFS
+
+Parsing MCFS syscalls is documented at [README](../MCFS/README.md).
+
+To plot MCFS input coverage, change `default_plot_name` in `iocov-main.py` to MCFS 
+prefix/suffix (e.g., `'mcfs_10m_20230311_005751_2523268'`) and run the following 
+command.  
+**Make sure the `input_cov.pkl` file is renamed corresponding to `default_plot_name`:**
+For example, pickle file `input_cov_mcfs_10m_20230311_005751_2523268.pkl`
+
+**Before running `iocov-main.py`, copy the input_cov.pkl to unfilter_input_cov.pkl**.
+```bash
+cp input_cov_mcfs_10m_20230311_005751_2523268.pkl unfilter_input_cov_mcfs_10m_20230311_005751_2523268.pkl
+```
+
 **This can actually be fixed to handle unfiltered input coverage.**
 
 ```bash
