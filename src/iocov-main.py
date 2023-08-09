@@ -44,10 +44,7 @@ def main(args):
         output_only = args.ploto
         with open('input_cov_{}.pkl'.format(name_suffix), 'rb') as f:
             input_cov = pickle.load(f)
-<<<<<<< HEAD
-=======
         # TODO: double-check if this workaround is sufficient 
->>>>>>> 5d033c8eba8ed2eead8a8a6e042ffb769ae765af
         if not input_only:
             with open('output_cov_{}.pkl'.format(name_suffix), 'rb') as f:
                 output_cov = pickle.load(f)
@@ -102,11 +99,6 @@ if __name__ == "__main__":
     # default_is_mcfs = False
     # default_lttng_log = 'crashmonkey-lttng-ext4-allrecur-614.log'
 
-<<<<<<< HEAD
-    # default_plot_name = 'syzkaller_26hours_2023_0708_0548'
-
-    default_plot_name = 'syzkaller_26hours_2023_0708_0548'
-=======
     ## Syzkaller example
     # default_plot_name = 'syzkaller_26hours_2023_0708_0548'
 
@@ -118,7 +110,6 @@ if __name__ == "__main__":
 
     # For computing IOCov accuracy
     # default_plot_name = 'xfstests_xattr_open_dump'
->>>>>>> 5d033c8eba8ed2eead8a8a6e042ffb769ae765af
     default_is_mcfs = False
     default_lttng_log = 'xfstests-lttng-all-related-ext4-all-xattrs-4633.log'
 
