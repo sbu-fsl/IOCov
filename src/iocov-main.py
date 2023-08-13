@@ -106,7 +106,7 @@ if __name__ == "__main__":
     # default_plot_name = 'xfstests_xattr_open_dump'
 
     ## MCFS example
-    default_plot_name = 'mcfs_10m_20230311_005751_2523268'
+    default_plot_name = 'mcfs_Uniform_50p_40mins_open_flags_20230810_170456_382883'
 
     # For computing IOCov accuracy
     # default_plot_name = 'xfstests_xattr_open_dump'

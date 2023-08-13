@@ -8,10 +8,10 @@ sys.path.append('../src')
 from constants import *
 from utilities import *
 
-name_suffix = '10m-20230311-005751-2523268'
+name_suffix = 'Inverse-Prob-5factor-40mins-sequence-pan-20230810-190452-580771'
 
 # TODO: for multiple sequence files, we need to combine them and analyze them together
-seq_log = 'sequence-pan-20230311-005751-2523268.log'
+seq_log = 'Inverse-Prob-5factor-40mins-open-flags-sequence-pan-20230810-190452-580771.log'
 
 # key: base-syscall
 # value: a dict 
