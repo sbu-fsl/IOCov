@@ -98,8 +98,7 @@ and `./Assets/Output-Figures` directories.
 Parsing Syzkaller syscalls is documented at [README](../Syzkaller/README.md).
 
 To plot Syzkaller input coverage, change `default_plot_name` in `iocov-main.py` to Syzkaller
-prefix/suffix (e.g., `'syzkaller_18mins_2023_0707_0410'`) and run the following 
-command.  
+prefix/suffix (e.g., `'syzkaller_18mins_2023_0707_0410'`).  
 **Make sure the `input_cov.pkl` file is renamed corresponding to `default_plot_name`:**
 For example, pickle file `input_cov_syzkaller_18mins_2023_0707_0410.pkl`
 
@@ -109,6 +108,10 @@ cp input_cov_syzkaller_18mins_2023_0707_0410.pkl unfilter_input_cov_syzkaller_18
 ```
 
 **This can actually be fixed to handle unfiltered input coverage.**
+
+After that, run the following command to generate `*input_coords.pkl` 
+(e.g., `syzkaller_18mins_2023_0707_0410_input_coords.pkl`) for plotting and 
+rough example figures in the `./src/Assets/Input-Figures` folder.
 
 ```bash
 python3 iocov-main.py --no-parse --plot -i
