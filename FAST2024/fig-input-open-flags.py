@@ -16,12 +16,12 @@ dpi_val = 600
 
 pkl_dir = '/mcfs/iocov-mcfs-fast24-2023-0723/IOCov/FAST2024/input-pickles'
 figure_dir = '/mcfs/iocov-mcfs-fast24-2023-0723/IOCov/FAST2024/expts-figures'
-figure_file_name = 'fast24-input-open-flags.pdf'
+figure_file_name = 'fast24-input-open-flags-subtraction-100p.pdf'
 
 all_open_flags = []
 pkl_files = [
-    'fig4_input_cov_all_xfstests_xattrs.pkl',
     'fig4_input_cov_crashmonkey.pkl',
+    'fig4_input_cov_all_xfstests_xattrs.pkl',
     'input_cov_syzkaller_40mins_2023_0809_0037.pkl',
     'input_cov_mcfs_Uniform_50p_40mins_open_flags_20230810_170456_382883.pkl', # Uniform or prob open inputs
     'input_cov_mcfs_Prob_5factor_40mins_open_flags_20230810_181953_484817.pkl',
