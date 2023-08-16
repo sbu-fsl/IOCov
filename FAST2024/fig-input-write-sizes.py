@@ -80,7 +80,7 @@ x_first_label = x_labels[0]
 x_labels[0] = ''
 
 ax.set_xticks(x_pos + width / 2, x_labels, rotation=45, ha='center', fontsize=8)
-ax.text(width / 2, 0.012, x_first_label, rotation=45, ha='right', fontsize=8)
+ax.text(width / 2, 0.005, x_first_label, rotation=45, ha='right', fontsize=8)
 
 # Create a function to define the transformation
 def transform(x):
