@@ -52,7 +52,7 @@ After editting these global variables, we run the following command to execute
 IOCov parser if parsing is required:
 
 ```bash
-python3 iocov-main.py --parse
+python3 iocov-main.py default_plot_name --parse
 ```
 
 When we only have the pickle files for the parsed input/output coverage
@@ -60,7 +60,7 @@ but no json file exists,
 we run the following command to produce corresponding json files:
 
 ```bash
-python3 iocov-main.py --no-parse --json
+python3 iocov-main.py default_plot_name --no-parse --json
 ```
 
 If the input/output coverage is already parsed (pkl files are available),
@@ -68,26 +68,26 @@ we run IOCov plotter to get the plots to visualize input and output coverage
 for various syscalls and arguments/returns:
 
 ```bash
-python3 iocov-main.py --no-parse --plot
+python3 iocov-main.py default_plot_name --no-parse --plot
 ```
 
 Run the following command to also plot unfiltered input coverage with a 
 stacked bar plot format:
 
 ```bash
-python3 iocov-main.py --no-parse --plot --plotunfilter
+python3 iocov-main.py default_plot_name --no-parse --plot --plotunfilter
 ```
 
 Run the following command to plot input coverage only:
 
 ```bash
-python3 iocov-main.py --no-parse --plot -i
+python3 iocov-main.py default_plot_name --no-parse --plot -i
 ```
 
 Run the following command to plot output coverage only:
 
 ```bash
-python3 iocov-main.py --no-parse --plot -o
+python3 iocov-main.py default_plot_name --no-parse --plot -o
 ```
 
 The generated plots (PDF files) are stored to the `./Assets/Input-Figures`
@@ -114,7 +114,7 @@ After that, run the following command to generate `*input_coords.pkl`
 rough example figures in the `./src/Assets/Input-Figures` folder.
 
 ```bash
-python3 iocov-main.py --no-parse --plot -i
+python3 iocov-main.py default_plot_name --no-parse --plot -i
 ```
 
 ## MCFS
@@ -135,5 +135,5 @@ cp input_cov_mcfs_10m_20230311_005751_2523268.pkl unfilter_input_cov_mcfs_10m_20
 **This can actually be fixed to handle unfiltered input coverage.**
 
 ```bash
-python3 iocov-main.py --no-parse --plot -i
+python3 iocov-main.py default_plot_name --no-parse --plot -i
 ```

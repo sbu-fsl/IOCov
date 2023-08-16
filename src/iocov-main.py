@@ -22,43 +22,43 @@ def main(args):
     unfilter_input_cov = {}
     if need_parse:
         file_path = args.filepath
-        if (os.path.exists('input_cov_{}.pkl'.format(name_suffix)) or 
-            os.path.exists('output_cov_{}.pkl'.format(name_suffix)) or 
-            os.path.exists('unfilter_input_cov_{}.pkl'.format(name_suffix))):
+        if (os.path.exists('input-cov-{}.pkl'.format(name_suffix)) or 
+            os.path.exists('output-cov-{}.pkl'.format(name_suffix)) or 
+            os.path.exists('unfilter-input-cov-{}.pkl'.format(name_suffix))):
             sys.exit('Cov pickle files already exist.')
         # tic = time.perf_counter()
         tp = TraceParser(file_path, is_mcfs, name_suffix)
         input_cov, output_cov, unfilter_input_cov = tp.cal_input_output_cov()
         # toc = time.perf_counter()
         # print(f"LTTng analyzer completed in {toc - tic:0.4f} seconds")
-        with open('input_cov_{}.pkl'.format(name_suffix), 'wb') as f:
+        with open('input-cov-{}.pkl'.format(name_suffix), 'wb') as f:
             pickle.dump(input_cov, f)
-        with open('output_cov_{}.pkl'.format(name_suffix), 'wb') as f:
+        with open('output-cov-{}.pkl'.format(name_suffix), 'wb') as f:
             pickle.dump(output_cov, f)
-        with open('unfilter_input_cov_{}.pkl'.format(name_suffix), 'wb') as f:
+        with open('unfilter-input-cov-{}.pkl'.format(name_suffix), 'wb') as f:
             pickle.dump(unfilter_input_cov, f)
     else:
         need_json = args.json
         need_plot = args.plot
         input_only = args.ploti
         output_only = args.ploto
-        with open('input_cov_{}.pkl'.format(name_suffix), 'rb') as f:
+        with open('input-cov-{}.pkl'.format(name_suffix), 'rb') as f:
             input_cov = pickle.load(f)
         # TODO: double-check if this workaround is sufficient 
         if not input_only:
-            with open('output_cov_{}.pkl'.format(name_suffix), 'rb') as f:
+            with open('output-cov-{}.pkl'.format(name_suffix), 'rb') as f:
                 output_cov = pickle.load(f)
-        with open('unfilter_input_cov_{}.pkl'.format(name_suffix), 'rb') as f:
+        with open('unfilter-input-cov-{}.pkl'.format(name_suffix), 'rb') as f:
             unfilter_input_cov = pickle.load(f)
         # Write input/output cov to json files if needed
         if need_json:
-            with open('input_cov_{}.json'.format(name_suffix), 'w') as fout:
+            with open('input-cov-{}.json'.format(name_suffix), 'w') as fout:
                 input_cov_str = json.dumps(input_cov, indent=4)
                 print(input_cov_str, file=fout)
-            with open('output_cov_{}.json'.format(name_suffix), 'w') as fout:
+            with open('output-cov-{}.json'.format(name_suffix), 'w') as fout:
                 output_cov_str = json.dumps(output_cov, indent=4)
                 print(output_cov_str, file=fout)
-            with open('unfilter_input_cov_{}.json'.format(name_suffix), 'w') as fout:
+            with open('unfilter-input-cov-{}.json'.format(name_suffix), 'w') as fout:
                 unfilter_input_cov_str = json.dumps(unfilter_input_cov, indent=4)
                 print(unfilter_input_cov_str, file=fout)
         if need_plot:
@@ -82,17 +82,17 @@ if __name__ == "__main__":
     # Handle Arguments
     # Example commands:
     ## Parse LTTng logs and get pickle files for input/output cov only
-    #### python3 iocov-main.py --parse
+    #### python3 iocov-main.py default_plot_name --parse
     ## When already has i/o cov pickle files, generate json files (without plotting)
-    #### python3 iocov-main.py --no-parse --json
+    #### python3 iocov-main.py default_plot_name --no-parse --json
     ## When already has i/o cov pickle files, plot without considering unfiltered input coverage
-    #### python3 iocov-main.py --no-parse --plot
+    #### python3 iocov-main.py default_plot_name --no-parse --plot
     ## When already has i/o cov pickle files, plot with considering unfiltered input coverage
-    #### python3 iocov-main.py --no-parse --plot --plotunfilter
+    #### python3 iocov-main.py default_plot_name --no-parse --plot --plotunfilter
     ## Plot input coverage only
-    #### python3 iocov-main.py --no-parse --plot -i
+    #### python3 iocov-main.py default_plot_name --no-parse --plot -i
     ## Plot output coverage only
-    #### python3 iocov-main.py --no-parse --plot -o
+    #### python3 iocov-main.py default_plot_name --no-parse --plot -o
     
     ## Crashmonkey example
     # default_plot_name = 'crashmonkey'
@@ -105,8 +105,13 @@ if __name__ == "__main__":
     ## Xfstests example
     # default_plot_name = 'xfstests_xattr_open_dump'
 
-    ## MCFS example
-    default_plot_name = 'mcfs_Uniform_40mins_write_sizes_20230812_213410_786070'
+    ## MCFS example LATEST default_plot_name
+    # default_plot_name = 'mcfs_Uniform_40mins_write_sizes_20230812_213410_786070'
+    default_plot_name_parts = sys.argv[1].split('.')[0].split('-')[2:]
+    default_plot_name = '-'.join(default_plot_name_parts)
+
+    # print('default_plot_name: ', default_plot_name)
+    # print('type(default_plot_name): ', default_plot_name)
 
     # For computing IOCov accuracy
     # default_plot_name = 'xfstests_xattr_open_dump'
@@ -137,7 +142,7 @@ if __name__ == "__main__":
     parser.add_argument('-i', '--ploti', default=False, action=argparse.BooleanOptionalAction)
     # Plot output coverage only
     parser.add_argument('-o', '--ploto', default=False, action=argparse.BooleanOptionalAction)
-    args = parser.parse_args()
+    args = parser.parse_args(sys.argv[2:])
     if args.parse and args.filepath is None:
         parser.error("--parse requires --filepath.")
     if args.plot and (args.plotdir is None or args.plottitle is None or args.plotunfilter is None):

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import json
+import argparse
 import pickle
 import sys
 # Make sure you are in MCFS folder
@@ -8,10 +9,21 @@ sys.path.append('../src')
 from constants import *
 from utilities import *
 
-name_suffix = 'Uniform-40mins-write-sizes-20230812-213410-786070'
+
+# name_suffix = 'Uniform-40mins-write-sizes-20230812-213410-786070'
 
 # TODO: for multiple sequence files, we need to combine them and analyze them together
-seq_log = 'Uniform-40mins-write-sizes-sequence-pan-20230812-213410-786070.log'
+# seq_log = 'Uniform-40mins-write-sizes-sequence-pan-20230812-213410-786070.log'
+
+parser = argparse.ArgumentParser(description='Process MCFS log file for input coverage.')
+parser.add_argument('filename', type=str, help='The name of the MCFS log file')
+args = parser.parse_args()
+
+seq_log = args.filename
+
+substr_to_remove = 'sequence-pan-'
+
+name_suffix = seq_log.replace(substr_to_remove, '').split('.')[0]
 
 # key: base-syscall
 # value: a dict 
@@ -94,9 +106,9 @@ all_input_cov['setxattr']['size'] = list_to_count_dict(all_setxattr_size)
 all_input_cov['setxattr']['flags'] = list_to_setxattr_flags_dict(all_setxattr_flags)
 
 # Dump the "all_input_cov" to both json file and pickle file
-with open('input_cov_mcfs_{}.pkl'.format(name_suffix), 'wb') as f:
+with open('input-cov-mcfs-{}.pkl'.format(name_suffix), 'wb') as f:
     pickle.dump(all_input_cov, f)
 
-with open('input_cov_mcfs_{}.json'.format(name_suffix), 'w') as fout:
+with open('input-cov-mcfs-{}.json'.format(name_suffix), 'w') as fout:
     input_cov_str = json.dumps(all_input_cov, indent=4)
     print(input_cov_str, file=fout)
