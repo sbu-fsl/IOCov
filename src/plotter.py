@@ -56,6 +56,18 @@ def init_output_coords():
         output_coords[sc] = coord_dict
     return output_coords
 
+def transform_neg_keys(byte_dict):
+    original_dict = byte_dict.copy()
+    for key in original_dict:
+        if key < 0:
+            abs_key = abs(key)
+            if abs_key in byte_dict:
+                byte_dict[abs_key] += byte_dict[key]
+            else:
+                byte_dict[abs_key] = byte_dict[key]
+            del byte_dict[key]
+    return byte_dict
+
 class TracePlotter:
     """
         input_coords:
@@ -129,7 +141,7 @@ class TracePlotter:
                     input_coords[sc][param]['Y-axis'] = self.bytes_yaxis.copy()
 
                     # Sorted byte number
-                    params_dict = input_cov[sc][param]
+                    params_dict = transform_neg_keys(input_cov[sc][param])
                     i = 0
                     for sbyte in sorted(params_dict.keys()):
                         found = False                        

@@ -2,6 +2,8 @@
 
 from constants import *
 import re
+import os
+import pickle
 
 ###### Parser Utilities
 # Apply to any postive/negative numbers
@@ -121,3 +123,70 @@ def list_to_setxattr_flags_dict(flags_list):
         if flags_dec < len(ALL_SETXATTR_FLAGS):
             flags_dict[SETXATTR_FLAGS_NUMS[flags_dec]] += 1
     return flags_dict
+
+
+def read_write_count_by_pkl(pkl_dir, pkl_file):
+    fig5_xfstests_input_coords = {}
+
+    with open(os.path.join(pkl_dir, pkl_file), 'rb') as f:
+        fig5_xfstests_input_coords = pickle.load(f)
+
+    xfstests_write_count = fig5_xfstests_input_coords['write']['count']
+
+    X_xfstests = xfstests_write_count['X-axis']
+    Y_xfstests = xfstests_write_count['Y-axis']
+
+    # print('xfstests_write_count: ', xfstests_write_count)
+    """
+    print('len(X_xfstests): ', len(X_xfstests))
+    for i in range(len(X_xfstests) - 1, -1, -1):
+        if Y_xfstests[i] > 0:
+            print('i: ', i)
+            print('X_xfstests: ', X_xfstests[i])
+            break
+    """
+    Keep = -1
+    for i in range(len(X_xfstests)):
+        each_X = X_xfstests[i]
+        if each_X == '2^32':
+            Keep = i 
+
+    # Labels
+    X_cut_xfstests = X_xfstests[0:Keep+1]
+    # Real Values
+    Y_cut_xfstests = Y_xfstests[0:Keep+1]
+
+    # print('X_cut_xfstests: ', X_cut_xfstests)
+    # print('Y_cut_xfstests: ', Y_cut_xfstests)
+
+    # ROUND DOWN: 2^{10} == 1024 (1024 - 2047)
+    X_xfstests = []
+    Y_xfstests = []
+    
+    for i in range(len(X_cut_xfstests)):
+        if X_cut_xfstests[i] == 'Intv.':
+            Y_xfstests[-1] += Y_cut_xfstests[i]
+        else: # Not 'Intv.'
+            X_xfstests.append(X_cut_xfstests[i])
+            Y_xfstests.append(Y_cut_xfstests[i])
+
+    """
+    # ONLY BOUNDARY VALUES EXACTLY EQUAL TO POWERS OF 2 NUMBERS
+    X_xfstests = []
+    Y_xfstests = []
+    for i in range(len(X_cut_xfstests)):
+        if X_cut_xfstests[i] != 'Intv.':
+            X_xfstests.append(X_cut_xfstests[i])
+            Y_xfstests.append(Y_cut_xfstests[i])
+
+    X_xfstests.pop(0)
+    Y_xfstests.pop(0)
+    # print('X_xfstests: ', X_xfstests)
+    # print('Y_xfstests: ', Y_xfstests)
+    """
+    # Do not use 2^10, use 10 instead 
+    for i in range(len(X_xfstests)):
+        X_xfstests[i] = X_xfstests[i].split('^')[-1]
+    
+    X_xfstests[0] = 'Equal to 0'
+    return X_xfstests, Y_xfstests
