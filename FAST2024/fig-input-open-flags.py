@@ -45,7 +45,7 @@ ignored_flags = ['O_ACCMODE', 'O_RDONLY']
 
 # Init a list which includes num_tools sub lists [ []*num_tools ]
 # Have to use this way to create empty sublists
-all_data = [[] for _ in range(6)]
+all_data = [[] for _ in range(num_tools)]
 
 # For each specific open flag
 for open_flag in sorted(all_open_flags[0].keys()):
