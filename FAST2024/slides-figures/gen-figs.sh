@@ -11,7 +11,10 @@
 
 # Run by "bash gen-figs.sh"
 
-SRC="IOCov-HotStorage23-Figures.pdf"
+# SRC="IOCov-HotStorage23-Figures.pdf"
+
+# SRC="ALL-FMITF-METIS-Figures.pdf"
+SRC="Metis-FAST24-Two-Column-Wide-Figures.pdf"
 
 # ARGS: pagenum fig-name-you-want.pdf
 # generates "fig-name-you-want-ann.pdf" (ANNotated)
@@ -27,10 +30,22 @@ if test -f "${HOME}/Downloads/$SRC" ; then
     mv -v "${HOME}/Downloads/$SRC" .
 fi
 
+# HotStorage'23 IOCov
+
 # IOCov Architecture figure
-get1fig 1 iocov-framework.pdf
+# get1fig 1 iocov-framework.pdf
 # IOCov Bug Example Figure
-get1fig 2 bug-example.pdf
+# get1fig 2 bug-example.pdf
+
+# FAST'24 Metis and RefFS
+
+# Metis Architecture figure
+# get1fig 26 metis-arch.pdf
+# RefFS Architecture figure
+# get1fig 27 reffs-arch.pdf
+
+# State exploration two-column wide figure
+get1fig 1 state-exploration.pdf
 
 # cleanup
 rm -f temp.pdf
