@@ -1,4 +1,11 @@
 import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.rcParams['pdf.fonttype'] = 42
+matplotlib.rcParams['ps.fonttype'] = 42
+
+
+plt.rcParams["font.family"] = "Times New Roman"
+
 
 # Data
 filesystems = ['RefFS', 'Ext4', 'Ext2', 'XFS', 'BtrFS']
@@ -12,12 +19,15 @@ x = range(len(filesystems))
 fig, ax = plt.subplots()
 
 # Width of the bars
-bar_width = 0.35
+bar_width = 0.4
+
+bar1Color='#2547b8'
+bar2Color='#e37d30'
 
 
-bars1 = ax.bar(x, opsPerSecond, width=bar_width, label='ops / sec')
+bars1 = ax.bar(x, opsPerSecond, color=bar1Color, width=bar_width, edgecolor='black', linewidth=0.5, hatch='//', label='ops / sec')
 
-bars2 = ax.bar([i + bar_width for i in x], statesPerSecond, width=bar_width, label='states / sec')
+bars2 = ax.bar([i + bar_width for i in x], statesPerSecond, color=bar2Color, width=bar_width, edgecolor='black', linewidth=0.5, label='states / sec')
 
 # Set the x-axis labels
 ax.set_xticks([i + bar_width / 2 for i in x])
@@ -28,9 +38,21 @@ yticks = [0, 100, 200, 300, 400, 500, 600, 700, 800, 900]  # Adjust the values a
 ax.set_yticks(yticks)
 ax.set_yticklabels(yticks)
 
+#Write values above bar charts
+
+for i, v in enumerate(opsPerSecond):
+    ax.text(i, v + 10, str(v), color=bar1Color, ha='center', va='bottom', fontsize=8)
+
+for i, v in enumerate(statesPerSecond):
+    ax.text(i + bar_width, v + 10, str(v), color=bar2Color, ha='center', va='bottom', fontsize=8)
+
+
+ax.set_axisbelow(True)
+#ax.grid(axis='y', linestyle='-', alpha=0.3)
+
 # Add labels and a legend
-ax.set_xlabel('File Systems (Using RAM Disks)')
-ax.set_ylabel('Number of Operations Or Unique States')
+ax.set_xlabel('File Systems (Using RAM Disks)', fontsize=10)
+ax.set_ylabel('Number of Operations Or Unique States', fontsize=10)
 #ax.set_title('Number of Operations or Unique States by File System')
 ax.legend()
 
