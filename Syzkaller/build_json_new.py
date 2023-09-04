@@ -18,7 +18,6 @@ xlsx_file = '/mnt/c/Users/Rohan/syzkaller/IOCov/Syzkaller/raw-syzkaller-syscalls
 # Fetch each syscall sheet as a data frame 
 
 # open and its variants
-# TODO: openat2 does not have flags or mode argument 
 df_open = pd.read_excel(xlsx_file, sheet_name='open')
 print("df_open")
 
@@ -50,18 +49,31 @@ print("df_chmod")
 df_setxattr = pd.read_excel(xlsx_file, sheet_name='setxattr')
 print("df_setxattr")
 
+# removexattr
 df_removexattr = pd.read_excel(xlsx_file, sheet_name='removexattr')
 print("df_removexattr")
+
+# link
 df_link = pd.read_excel(xlsx_file, sheet_name='link')
 print("df_link")
+
+# unlink
 df_unlink = pd.read_excel(xlsx_file, sheet_name='unlink')
 print("df_unlink")
+
+# symlink
 df_symlink = pd.read_excel(xlsx_file, sheet_name='symlink')
 print("df_symlink")
+
+# rmdir
 df_rmdir = pd.read_excel(xlsx_file, sheet_name='rmdir')
 print("df_rmdir")
+
+# rename
 df_rename = pd.read_excel(xlsx_file, sheet_name='rename')
 print("df_rename")
+
+# statfs
 df_statfs = pd.read_excel(xlsx_file, sheet_name='statfs')
 print("df_statfs")
 
