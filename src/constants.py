@@ -46,7 +46,15 @@ SYSCALL_ARGS = {
     'close': [],
     'chdir': [],
     'setxattr': ['size', 'flags'], 
-    'getxattr': ['size']
+    'getxattr': ['size'],
+    'removexattr' : ['path', 'name'],
+    'link' : ['oldpath', 'newpath'],
+    'unlink' : ['pathname'],
+    'symlink' : ['target' , 'linkpath'],
+    'rmdir' : ['pathname'],
+    'chown' : ['pathname', 'owner', 'group'],
+    'rename' : ['oldpath', 'newpath'],
+    'statfs' : ['path', 'buf']
 }
 
 INPUT_PREFIX='syscall_entry_'
@@ -224,6 +232,13 @@ SYZKALLER_SYSCALLS = ['open', 'openat', 'creat', 'openat2',
             'setxattr', 'lsetxattr', 'fsetxattr', 
             'getxattr', 'lgetxattr', 'fgetxattr']
 
+# updated syscalls to calculate syzkaller input cov
+SYZKALLER_SYSCALLS_NEW = ["open", "read", "write", "lseek", "close", 
+                          "truncate", "unlink", "mkdir", "rmdir", "chmod", 
+                          "chown", "setxattr", "removexattr", "getxattr", 
+                          "rename", "link", "symlink", "statfs"]
+
+ALL_SYSCALLS_NEW = SYZKALLER_SYSCALLS_NEW
 SYZKALLER_HEADERS = {
     'open': ['syscall', 'pathname', 'flags', 'mode'],
     'openat': ['syscall', 'dirfd', 'pathname', 'flags', 'mode'],
@@ -251,7 +266,15 @@ SYZKALLER_HEADERS = {
     'fsetxattr': ['syscall', 'fd', 'name', 'value', 'size', 'flags'],
     'getxattr': ['syscall', 'path', 'name', 'value', 'size'],
     'lgetxattr': ['syscall', 'path', 'name', 'value', 'size'],
-    'fgetxattr': ['syscall', 'fd', 'name', 'value', 'size']
+    'fgetxattr': ['syscall', 'fd', 'name', 'value', 'size'],
+    'removexattr' : ['syscall', 'path', 'name'],
+    'link' : ['syscall', 'oldpath', 'newpath'],
+    'unlink' : ['syscall', 'pathname'],
+    'symlink' : ['syscall', 'target' , 'linkpath'],
+    'rmdir' : ['syscall', 'pathname'],
+    'chown' : ['syscall', 'pathname', 'owner', 'group'],
+    'rename' : ['syscall', 'oldpath', 'newpath'],
+    'statfs' : ['syscall', 'path', 'buf']
 }
 
 # Those syscalls may have different numbers of arguments
