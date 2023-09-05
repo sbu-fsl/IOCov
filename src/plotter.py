@@ -164,8 +164,8 @@ class TracePlotter:
                                     i += 1
                                 else:
                                     sys.exit('Error in bytes classification: case two')
-                else:
-                    sys.exit('Input coords error: {} - {}'.format(sc, param))
+                #else:
+                #    sys.exit('Input coords error: {} - {}'.format(sc, param))
         return input_coords
 
     # Populate X and Y-axis for output_coords
@@ -252,8 +252,8 @@ class TracePlotter:
                         '{}-input-{}-{}.{}'.format(self.plot_prefix, sc, param, self.plot_format)), 
                         bbox_inches='tight',dpi=self.plot_dpi)
                     plt.close('all')
-                else:
-                    sys.exit('Plot coords error: {} - {}'.format(sc, param))
+                #else:
+                #    sys.exit('Plot coords error: {} - {}'.format(sc, param))
 
     def populate_output_coords(self):
         errors_dict = {}

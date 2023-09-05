@@ -9,7 +9,7 @@ set -e
 
 # SEQFILE=/mcfs/iocov-mcfs-fast24-2023-0723/nfs4mc/driver-fs-state/WHM-inverse-40mins-open-flags-20230817-024926-918867/sequence-pan-20230817-024926-918867.log
 
-SEQFILE=/mcfs/iocov-mcfs-fast24-2023-0723/nfs4mc/driver-fs-state/Uniform-50p-40mins-open-flags-20230905-003428-1106728/sequence-pan-20230905-003428-1106728.log
+SEQFILE=/mcfs/iocov-mcfs-fast24-2023-0723/nfs4mc/driver-fs-state/RZDN-Inverse-90p-40mins-write-sizes-20230905-025014-1154360/sequence-pan-20230905-025014-1154360.log
 
 SUFFIX=$(echo $SEQFILE | rev | cut -d'/' -f2 | rev)
 FILENAME=$SUFFIX".log"

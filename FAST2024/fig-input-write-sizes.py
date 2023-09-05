@@ -18,17 +18,20 @@ dpi_val = 600
 
 pkl_dir = '/mcfs/iocov-mcfs-fast24-2023-0723/IOCov/FAST2024/input-pickles'
 
-labels = ['CrashMonkey', 'xfstests', 'Syzkaller', 'MCFS-Uniform']
+labels = ['CrashMonkey', 'xfstests', 'Syzkaller', 'Metis Uniform', 'Metis RSD', 'Metis RSD Inverse']
 
-coord_pkl_files = ['fig5_crashmonkey_input_coords.pkl',
-                   'fig5_xfstests_input_coords.pkl', 
-                   'syzkaller_40mins_2023_0809_0037_input_coords.pkl',
-                   'mcfs_Uniform_40mins_write_sizes_20230812_213410_786070_input_coords.pkl']
+coord_pkl_files = ['fig5_crashmonkey_input_coords.pkl', # CrashMonkey
+                   'fig5_xfstests_input_coords.pkl', # xfstests
+                   'syzkaller-debug-40mins-2023-0830_input_coords.pkl', # Syzkaller 
+                   'mcfs_Uniform_40mins_write_sizes_20230812_213410_786070_input_coords.pkl', # Metis Uniform 50%
+                   'mcfs-RZDN-90p-40mins-write-sizes-20230905-012406-1129837_input_coords.pkl', # Metis RZDN 90%
+                   'mcfs-RZDN-Inverse-90p-40mins-write-sizes-20230905-025014-1154360_input_coords.pkl' # Metis RZDN Inverse 90%
+                   ]
 
 figure_dir = '/mcfs/iocov-mcfs-fast24-2023-0723/IOCov/FAST2024/expts-figures'
-figure_file_name = 'fast24-input-write-sizes.pdf'
+figure_file_name = 'fast24-input-write-sizes-RZDN-90p.pdf'
 
-width = 0.15
+width = 0.12
 
 num_tools = len(coord_pkl_files)
 
@@ -59,6 +62,12 @@ fig, ax = plt.subplots(figsize=(width_inches, height_inches))
 # Position of bars on x-axis
 x_pos = np.arange(len(all_axes[labels[0]][0]))
 
+x_pos = x_pos[:-1]
+x_labels = x_labels[:-1]
+
+#print('x_pos: ', x_pos)
+#print('x_labels: ', x_labels)
+
 plt.xticks(x_pos, x_labels)
 
 ax.set_yscale('log')
@@ -66,15 +75,15 @@ ax.set_yscale('log')
 ytick_values = [0.1, 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000]
 ytick_labels = ['0', '1', '10', '100', '1K', '10K', '100K', '1M', '10M']
 
-bar_coords = [x_pos - width * 1.5, x_pos - width * 0.5, x_pos + width * 0.5, x_pos + width * 1.5]
-bar_colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
-edgecolors = ['black', 'black', 'black', 'black']
-linewidths = [0.5, 0.5, 0.5, 0.5]
-labels = ['CrashMonkey', 'xfstests', 'Syzkaller', 'MCFS Uniform']
+bar_coords = [x_pos - 5 * width / 2, x_pos - 3 * width / 2, x_pos - width / 2, x_pos + width / 2, x_pos + 3 * width / 2, x_pos + 5 * width / 2]
+bar_colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#17becf', '#8c564b']
+edgecolors = ['black', 'black', 'black', 'black', 'black', 'black']
+linewidths = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+labels = ['CrashMonkey', 'xfstests', 'Syzkaller', 'Metis Uniform', 'Metis RSD', 'Metis RSD Inverse']
 
 # Plot the bars for each testing tool
 for i in range(len(bar_coords)):
-    ax.bar(bar_coords[i], Y_data[i], width, color=bar_colors[i], edgecolor=edgecolors[i], linewidth=linewidths[i], label=labels[i])
+    ax.bar(bar_coords[i], Y_data[i][:-1], width, color=bar_colors[i], edgecolor=edgecolors[i], linewidth=linewidths[i], label=labels[i])
 
 x_first_label = x_labels[0]
 x_labels[0] = ''
