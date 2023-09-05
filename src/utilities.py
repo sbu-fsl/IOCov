@@ -38,7 +38,7 @@ def find_testing_filename(text, c):
 # Does not collect input coverage for close()
 def init_input_cov():
     input_cov = {}
-    for sc in ALL_SYSCALLS:
+    for sc in ALL_SYSCALLS_NEW:
         empty_arg = {}
         if sc == 'open':
             for each_arg in SYSCALL_ARGS[sc]:

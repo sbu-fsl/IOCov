@@ -5,7 +5,7 @@ import numpy as np
 
  
 # Opening JSON file
-with open('syzkaller_cov.json') as json_file:
+with open('input_cov_syzkaller_40mins_2023_0809_0037.json') as json_file:
     data = json.load(json_file)
     data = data['open']['flags']
     names = list(data.keys())
