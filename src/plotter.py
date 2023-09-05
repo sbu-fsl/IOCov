@@ -117,6 +117,8 @@ class TracePlotter:
     def populate_input_coords(self, input_cov):
         input_coords = init_input_coords()
         for sc in input_cov.keys():
+            if sc not in SYSCALL_ARGS.keys():
+                continue
             for param in SYSCALL_ARGS[sc]:
                 # open: flags, mode
                 # lseek: whence
@@ -177,6 +179,8 @@ class TracePlotter:
                 pickle.dump(self.input_coords, f)
         self.unfilter_input_coords = self.populate_input_coords(self.unfilter_input_cov)
         for sc in self.input_cov.keys():
+            if sc not in SYSCALL_ARGS.keys():
+                continue
             for param in SYSCALL_ARGS[sc]:
                 xaxis = self.input_coords[sc][param]['X-axis']
                 # print('{} {} xaxis: {}'.format(sc, param, xaxis))

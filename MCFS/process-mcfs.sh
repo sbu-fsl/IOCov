@@ -7,7 +7,9 @@ set -e
 # mkdir WHM-inverse-40mins-open-flags-20230816-191040-861324
 # mv *.log *.csv *.gz *.txt WHM-inverse-40mins-open-flags-20230816-191040-861324
 
-SEQFILE=/mcfs/iocov-mcfs-fast24-2023-0723/nfs4mc/driver-fs-state/WHM-inverse-40mins-open-flags-20230817-024926-918867/sequence-pan-20230817-024926-918867.log
+# SEQFILE=/mcfs/iocov-mcfs-fast24-2023-0723/nfs4mc/driver-fs-state/WHM-inverse-40mins-open-flags-20230817-024926-918867/sequence-pan-20230817-024926-918867.log
+
+SEQFILE=/mcfs/iocov-mcfs-fast24-2023-0723/nfs4mc/driver-fs-state/Uniform-50p-40mins-open-flags-20230905-003428-1106728/sequence-pan-20230905-003428-1106728.log
 
 SUFFIX=$(echo $SEQFILE | rev | cut -d'/' -f2 | rev)
 FILENAME=$SUFFIX".log"

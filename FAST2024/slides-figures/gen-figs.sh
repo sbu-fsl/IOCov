@@ -13,8 +13,8 @@
 
 # SRC="IOCov-HotStorage23-Figures.pdf"
 
-# SRC="ALL-FMITF-METIS-Figures.pdf"
-SRC="Metis-FAST24-Two-Column-Wide-Figures.pdf"
+SRC="ALL-FMITF-METIS-Figures.pdf"
+# SRC="Metis-FAST24-Two-Column-Wide-Figures.pdf"
 
 # ARGS: pagenum fig-name-you-want.pdf
 # generates "fig-name-you-want-ann.pdf" (ANNotated)
@@ -40,12 +40,12 @@ fi
 # FAST'24 Metis and RefFS
 
 # Metis Architecture figure
-# get1fig 26 metis-arch.pdf
+get1fig 28 metis-arch.pdf
 # RefFS Architecture figure
-# get1fig 27 reffs-arch.pdf
+get1fig 29 reffs-arch.pdf
 
 # State exploration two-column wide figure
-get1fig 1 state-exploration.pdf
+# get1fig 1 state-exploration.pdf
 
 # cleanup
 rm -f temp.pdf

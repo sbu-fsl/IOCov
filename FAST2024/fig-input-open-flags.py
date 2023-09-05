@@ -16,16 +16,16 @@ dpi_val = 600
 
 pkl_dir = '/mcfs/iocov-mcfs-fast24-2023-0723/IOCov/FAST2024/input-pickles'
 figure_dir = '/mcfs/iocov-mcfs-fast24-2023-0723/IOCov/FAST2024/expts-figures'
-figure_file_name = 'fast24-input-open-flags-subtraction-100p.pdf'
+figure_file_name = 'fast24-input-open-flags-40mins-Uniform-50p-RZD-90p.pdf'
 
 all_open_flags = []
 pkl_files = [
-    'fig4_input_cov_crashmonkey.pkl',
-    'fig4_input_cov_all_xfstests_xattrs.pkl',
-    'input_cov_syzkaller_40mins_2023_0809_0037.pkl',
-    'input_cov_mcfs_Uniform_50p_40mins_open_flags_20230810_170456_382883.pkl', # Uniform or prob open inputs
-    'input_cov_mcfs_Prob_5factor_40mins_open_flags_20230810_181953_484817.pkl',
-    'input_cov_mcfs_Inverse_Prob_5factor_40mins_sequence_pan_20230810_190452_580771.pkl'
+    'fig4_input_cov_crashmonkey.pkl', # CrashMonkey
+    'fig4_input_cov_all_xfstests_xattrs.pkl', # xfstests
+    'input-cov-syzkaller-debug-40mins-2023-0830.pkl', # Syzkaller 
+    'input-cov-mcfs-Uniform-50p-40mins-open-flags-20230905-003428-1106728.pkl', # Uniform 50%
+    'input-cov-mcfs-RZD-40mins-open-flags-20230904-033012-1045713.pkl', # Rank-size distribution 
+    'input-cov-mcfs-RZD-inverse-40mins-open-flags-20230904-042627-1069081.pkl' # Inverse Rank-size distribution 
     ]
 num_tools = len(pkl_files)
 for i in range(num_tools):
@@ -90,10 +90,10 @@ ax.set_ylim(ymin = 0.1)
 
 # Plot the data
 bar_coords = [x_pos - 5 * width / 2, x_pos - 3 * width / 2, x_pos - width / 2, x_pos + width / 2, x_pos + 3 * width / 2, x_pos + 5 * width / 2]
-bar_colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
+bar_colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#17becf', '#8c564b']
 edgecolors = ['black', 'black', 'black', 'black', 'black', 'black']
 linewidths = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
-labels = ['CrashMonkey', 'xfstests', 'Syzkaller', 'MCFS Uniform', 'MCFS Prob', 'MCFS Prob Inv']
+labels = ['CrashMonkey', 'xfstests', 'Syzkaller', 'Metis Uniform', 'Metis RSD', 'Metis RSD Inverse']
 
 for i in range(num_tools):
     ax.bar(bar_coords[i], all_data_arr[i], width, color=bar_colors[i], edgecolor=edgecolors[i], linewidth=linewidths[i], label=labels[i])

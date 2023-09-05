@@ -256,3 +256,12 @@ SYZKALLER_HEADERS = {
 
 # Those syscalls may have different numbers of arguments
 SYZKALLER_ARGS_EXCEPTIONS = ['open', 'openat']
+
+# MCFS syscalls
+MCFS_DRIVER_SYSCALLS = ["open", "read", "write", "lseek", "close", 
+                        "truncate", "unlink", "mkdir", "rmdir", "chmod", 
+                        "chown", "setxattr", "removexattr", "getxattr", 
+                        "rename", "link", "symlink", "statfs"]
+
+
+

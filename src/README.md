@@ -119,21 +119,43 @@ python3 iocov-main.py default_plot_name --no-parse --plot -i
 
 ## MCFS
 
+**Use hyphen ("-") as file names not underscore ("_").**
+
 Parsing MCFS syscalls is documented at [README](../MCFS/README.md).
 
 To plot MCFS input coverage, change `default_plot_name` in `iocov-main.py` to MCFS 
 prefix/suffix (e.g., `'mcfs_10m_20230311_005751_2523268'`) and run the following 
 command.  
-**Make sure the `input_cov.pkl` file is renamed corresponding to `default_plot_name`:**
-For example, pickle file `input_cov_mcfs_10m_20230311_005751_2523268.pkl`
+**Make sure the `input-cov.pkl` file is renamed corresponding to `default_plot_name`:**
+For example, pickle file `input-cov-mcfs-10m-20230311-005751-2523268.pkl`
 
-**Before running `iocov-main.py`, copy the input_cov.pkl to unfilter_input_cov.pkl**.
+**Before running `iocov-main.py`, copy the input-cov.pkl to unfilter-input-cov.pkl**.
 ```bash
-cp input_cov_mcfs_10m_20230311_005751_2523268.pkl unfilter_input_cov_mcfs_10m_20230311_005751_2523268.pkl
+cp input-cov-mcfs-10m-20230311-005751-2523268.pkl unfilter-input-cov-mcfs-10m-20230311-005751-2523268.pkl
 ```
 
 **This can actually be fixed to handle unfiltered input coverage.**
 
+We can do following way without editting `default_plot_name` manually.  
+
 ```bash
 python3 iocov-main.py default_plot_name --no-parse --plot -i
+```
+
+For example (Note we have to keep the `input-cov-` prefix):
+
+```bash
+python3 iocov-main.py input-cov-mcfs-10m-20230311-005751-2523268 --no-parse --plot -i
+```
+
+or 
+
+```bash
+python3 iocov-main.py input-cov-syzkaller-debug-40mins-2023-0830 --no-parse --plot -i
+```
+
+The copy input coords pickle file:
+
+```bash
+cp syzkaller-debug-40mins-2023-0830_input_coords.pkl ../FAST2024/input-pickles/
 ```
