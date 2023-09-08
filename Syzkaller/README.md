@@ -32,3 +32,12 @@ python3 build_json.py
 
 5. Plot the Syzkaller input/output coverage by IOCov plotter, and the 
    document is at [IOCov README](../src/README.md).
+
+# Syzkaller parsing with debug flag
+
+1.  Run syzkaller for a particular time interval (let's say 40 minutes) and store the logs in a file : 
+   `timeout 40m ./bin/syz-manager -config=my.cfg -debug > debug_out.log`
+2.  Run parse_syzkaller_debug.py to get all relevant syscalls from the debug log and dump them in a folder consisting of txt files for each syscall
+3.  Run syscall_parse_new.py to extract syscall arguments and generate a xlsx file. To change/add syscalls, do so in ../src/constants.py
+4.  Run build_json_new.py to construct input coverage JSON and pickle files. Change the input xlsx file accordingly.
+
