@@ -16,13 +16,13 @@ dpi_val = 600
 
 pkl_dir = '/mcfs/iocov-mcfs-fast24-2023-0723/IOCov/FAST2024/input-pickles'
 figure_dir = '/mcfs/iocov-mcfs-fast24-2023-0723/IOCov/FAST2024/expts-figures'
-figure_file_name = 'fast24-all-mcfs-input-open-flags.pdf'
+figure_file_name = 'only-metis-input-open-flags.pdf'
 
 all_open_flags = []
 pkl_files = [
-    'input_cov_mcfs_Uniform_50p_40mins_open_flags_20230810_170456_382883.pkl', # Uniform or prob open inputs
-    'input_cov_mcfs_Prob_5factor_40mins_open_flags_20230810_181953_484817.pkl',
-    'input-cov-mcfs-WHM-inverse-40mins-open-flags-20230817-024926-918867.pkl'
+    'input-cov-mcfs-Uniform-50p-40mins-open-flags-20230905-003428-1106728.pkl', # Uniform 50%
+    'input-cov-mcfs-RZD-40mins-open-flags-20230904-033012-1045713.pkl', # Rank-size distribution 
+    'input-cov-mcfs-RZD-inverse-40mins-open-flags-20230904-042627-1069081.pkl' # Inverse Rank-size distribution 
     ]
 num_tools = len(pkl_files)
 for i in range(num_tools):
@@ -87,7 +87,7 @@ bar_coords = [x_pos - width, x_pos, x_pos + width]
 bar_colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
 edgecolors = ['black', 'black', 'black']
 linewidths = [0.5, 0.5, 0.5]
-labels = ['MCFS Uniform', 'MCFS Prob', 'MCFS Prob Inv']
+labels = ['Metis Uniform', 'Metis RSD', 'MCFS IRSD'] # IRSD: Inverse Rank-size distribution 
 
 for i in range(num_tools):
     ax.bar(bar_coords[i], all_data_arr[i], width, color=bar_colors[i], edgecolor=edgecolors[i], linewidth=linewidths[i], label=labels[i])

@@ -93,7 +93,7 @@ bar_coords = [x_pos - 5 * width / 2, x_pos - 3 * width / 2, x_pos - width / 2, x
 bar_colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#17becf', '#8c564b']
 edgecolors = ['black', 'black', 'black', 'black', 'black', 'black']
 linewidths = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
-labels = ['CrashMonkey', 'xfstests', 'Syzkaller', 'Metis Uniform', 'Metis RSD', 'Metis RSD Inverse']
+labels = ['CrashMonkey', 'xfstests', 'Syzkaller', 'Metis Uniform', 'Metis RSD', 'Metis IRSD'] # IRSD: Inverse Rank-size distribution
 
 for i in range(num_tools):
     ax.bar(bar_coords[i], all_data_arr[i], width, color=bar_colors[i], edgecolor=edgecolors[i], linewidth=linewidths[i], label=labels[i])

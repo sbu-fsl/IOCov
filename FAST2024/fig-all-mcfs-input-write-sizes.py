@@ -18,20 +18,17 @@ dpi_val = 600
 
 pkl_dir = '/mcfs/iocov-mcfs-fast24-2023-0723/IOCov/FAST2024/input-pickles'
 
-labels = ['CrashMonkey', 'xfstests', 'Syzkaller', 'Metis Uniform', 'Metis RSD', 'Metis RSD Inverse']
+labels = ['Metis Uniform', 'Metis RSD', 'Metis IRSD'] # IRSD: Inverse Rank-size distribution
 
-coord_pkl_files = ['fig5_crashmonkey_input_coords.pkl', # CrashMonkey
-                   'fig5_xfstests_input_coords.pkl', # xfstests
-                   'syzkaller-debug-40mins-2023-0830_input_coords.pkl', # Syzkaller 
-                   'mcfs_Uniform_40mins_write_sizes_20230812_213410_786070_input_coords.pkl', # Metis Uniform 50%
-                   'mcfs-RZDN-90p-40mins-write-sizes-20230905-012406-1129837_input_coords.pkl', # Metis RZDN 90%
-                   'mcfs-RZDN-Inverse-90p-40mins-write-sizes-20230905-025014-1154360_input_coords.pkl' # Metis RZDN Inverse 90%
+coord_pkl_files = ['mcfs-Uniform-4hours-write-sizes-20230907-001716-1330916_input_coords.pkl', # Metis Uniform 50%
+                   'mcfs-RZDN-90p-4hours-write-sizes-20230907-042128-1421507_input_coords.pkl', # Metis RZDN 90%
+                   'mcfs-IRZD-4hours-33parts-90p-write-size-20230907-203157-1594068_input_coords.pkl' # Metis RZDN Inverse 90%
                    ]
 
 figure_dir = '/mcfs/iocov-mcfs-fast24-2023-0723/IOCov/FAST2024/expts-figures'
-figure_file_name = 'fast24-input-write-sizes-RZDN-90p.pdf'
+figure_file_name = 'only-metis-input-write-sizes-4hours.pdf'
 
-width = 0.12
+width = 0.2
 
 num_tools = len(coord_pkl_files)
 
@@ -70,16 +67,19 @@ x_labels = x_labels[:-1]
 
 plt.xticks(x_pos, x_labels)
 
-ax.set_yscale('log')
+# ax.set_yscale('log')
 
-ytick_values = [0.1, 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000]
-ytick_labels = ['0', '1', '10', '100', '1K', '10K', '100K', '1M', '10M']
+# ytick_values = [0, 20, 40, 60, 80, 100]
+# ytick_labels = ['0', '20', '40', '60', '80', '100']
 
-bar_coords = [x_pos - 5 * width / 2, x_pos - 3 * width / 2, x_pos - width / 2, x_pos + width / 2, x_pos + 3 * width / 2, x_pos + 5 * width / 2]
-bar_colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#17becf', '#8c564b']
-edgecolors = ['black', 'black', 'black', 'black', 'black', 'black']
-linewidths = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
-labels = ['CrashMonkey', 'xfstests', 'Syzkaller', 'Metis Uniform', 'Metis RSD', 'Metis IRSD'] # IRSD: Inverse Rank-size distribution
+ytick_values = [0, 200, 400, 600, 800, 1000]
+ytick_labels = ['0', '200', '400', '600', '800', '1000']
+
+bar_coords = [x_pos - width, x_pos, x_pos + width]
+bar_colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
+edgecolors = ['black', 'black', 'black']
+linewidths = [0.5, 0.5, 0.5]
+labels = ['Metis Uniform', 'Metis RSD', 'MCFS IRSD'] # IRSD: Inverse Rank-size distribution 
 
 # Plot the bars for each testing tool
 for i in range(len(bar_coords)):
@@ -140,7 +140,7 @@ ax.set_ylim(ymin = 0.1)
 
 #ax.set_title('My Bar Chart')
 ax.set_xlabel('Write Size in Bytes (exponent of log base 2)', fontweight='bold')
-ax.set_ylabel('Frequency (log scale base 10)', fontweight='bold')
+ax.set_ylabel('Frequency', fontweight='bold')
 
 # Add a legend
 # ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=len(labels))
