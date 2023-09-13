@@ -29,7 +29,7 @@ coord_pkl_files = ['fig5_crashmonkey_input_coords.pkl', # CrashMonkey
                    ]
 
 figure_dir = '/mcfs/iocov-mcfs-fast24-2023-0723/IOCov/FAST2024/expts-figures'
-figure_file_name = 'fast24-input-write-sizes-RZDN-90p.pdf'
+figure_file_name = 'input-cov-write-sizes.pdf'
 
 width = 0.12
 
