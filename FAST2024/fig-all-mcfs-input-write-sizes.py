@@ -20,13 +20,19 @@ pkl_dir = '/mcfs/iocov-mcfs-fast24-2023-0723/IOCov/FAST2024/input-pickles'
 
 labels = ['Metis Uniform', 'Metis RSD', 'Metis IRSD'] # IRSD: Inverse Rank-size distribution
 
-coord_pkl_files = ['mcfs-Uniform-4hours-write-sizes-20230907-001716-1330916_input_coords.pkl', # Metis Uniform 50%
-                   'mcfs-RZDN-90p-4hours-write-sizes-20230907-042128-1421507_input_coords.pkl', # Metis RZDN 90%
-                   'mcfs-IRZD-4hours-33parts-90p-write-size-20230907-203157-1594068_input_coords.pkl' # Metis RZDN Inverse 90%
-                   ]
+# coord_pkl_files = ['mcfs-Uniform-4hours-write-sizes-20230907-001716-1330916_input_coords.pkl', # Metis Uniform 50%
+#                   'mcfs-RZDN-90p-4hours-write-sizes-20230907-042128-1421507_input_coords.pkl', # Metis RZDN 90%
+#                   'mcfs-IRZD-4hours-33parts-90p-write-size-20230907-203157-1594068_input_coords.pkl' # Metis RZDN Inverse 90%
+#                   ]
+
+coord_pkl_files = ['mcfs-Uniform-24hours-33parts-write-sizes-20230908-024720-1683195_input_coords.pkl', # Metis Uniform 50%
+                  'mcfs-RSD-24hours-33parts-90p-write-sizes-20230909-031238-2083659_input_coords.pkl', # Metis RZDN 90%
+                  'mcfs-IRSD-24hours-33parts-90p-write-sizes-20230910-043323-2552966_input_coords.pkl' # Metis RZDN Inverse 90%
+                  ]
+
 
 figure_dir = '/mcfs/iocov-mcfs-fast24-2023-0723/IOCov/FAST2024/expts-figures'
-figure_file_name = 'only-metis-input-write-sizes-4hours.pdf'
+figure_file_name = 'only-metis-input-write-sizes-24hours.pdf'
 
 width = 0.2
 
@@ -72,24 +78,34 @@ plt.xticks(x_pos, x_labels)
 # ytick_values = [0, 20, 40, 60, 80, 100]
 # ytick_labels = ['0', '20', '40', '60', '80', '100']
 
-ytick_values = [0, 200, 400, 600, 800, 1000]
-ytick_labels = ['0', '200', '400', '600', '800', '1000']
+#ytick_values = [0, 200, 400, 600, 800, 1000]
+#ytick_labels = ['0', '200', '400', '600', '800', '1000']
+
+ytick_values = [0, 2000, 4000, 6000, 8000, 10000]
+ytick_labels = ['0', '2000', '4000', '6000', '8000', '10000']
 
 bar_coords = [x_pos - width, x_pos, x_pos + width]
 bar_colors = ['#1f77b4', '#ff7f0e', '#2ca02c']
 edgecolors = ['black', 'black', 'black']
 linewidths = [0.5, 0.5, 0.5]
-labels = ['Metis Uniform', 'Metis RSD', 'MCFS IRSD'] # IRSD: Inverse Rank-size distribution 
+labels = ['Metis Uniform', 'Metis RSD', 'Metis IRSD'] # IRSD: Inverse Rank-size distribution 
 
 # Plot the bars for each testing tool
 for i in range(len(bar_coords)):
     ax.bar(bar_coords[i], Y_data[i][:-1], width, color=bar_colors[i], edgecolor=edgecolors[i], linewidth=linewidths[i], label=labels[i])
 
 x_first_label = x_labels[0]
-x_labels[0] = ''
+x_labels[0] = '-∞'
 
-ax.set_xticks(x_pos + width / 2, x_labels, rotation=45, ha='center', fontsize=8)
-ax.text(width / 2, 0.005, x_first_label, rotation=45, ha='right', fontsize=8)
+# print('x_first_label: ', x_first_label)
+
+# ax.set_ylim(-2, 1100)
+
+# print('ax.get_xlim(): ', ax.get_xlim())
+# print('ax.get_ylim(): ', ax.get_ylim())
+
+ax.set_xticks(x_pos + width / 2, x_labels, ha='center', fontsize=8)
+# ax.text(width / 2, -1, '-∞', ha='center', fontsize=10)
 
 # Create a function to define the transformation
 def transform(x):
@@ -140,7 +156,7 @@ ax.set_ylim(ymin = 0.1)
 
 #ax.set_title('My Bar Chart')
 ax.set_xlabel('Write Size in Bytes (exponent of log base 2)', fontweight='bold')
-ax.set_ylabel('Frequency', fontweight='bold')
+ax.set_ylabel('Count', fontweight='bold')
 
 # Add a legend
 # ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=len(labels))
@@ -157,3 +173,7 @@ plt.tight_layout()
 
 # dpi=dpi_val
 fig.savefig(os.path.join(figure_dir, figure_file_name), format='pdf', bbox_inches='tight')
+
+# Change distinguished colors of bars: yellow, 
+# Consistent 
+# Remove border lines of bars
