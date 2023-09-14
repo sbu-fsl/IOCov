@@ -18,14 +18,14 @@ dpi_val = 600
 
 pkl_dir = '/mcfs/iocov-mcfs-fast24-2023-0723/IOCov/FAST2024/input-pickles'
 
-labels = ['CrashMonkey', 'xfstests', 'Syzkaller', 'Metis Uniform', 'Metis RSD', 'Metis RSD Inverse']
+labels = ['CrashMonkey', 'xfstests', 'Syzkaller', 'Metis Uniform', 'Metis GP', 'Metis IGP']
 
 coord_pkl_files = ['fig5_crashmonkey_input_coords.pkl', # CrashMonkey
                    'fig5_xfstests_input_coords.pkl', # xfstests
                    'syzkaller-debug-40mins-2023-0830_input_coords.pkl', # Syzkaller 
-                   'mcfs_Uniform_40mins_write_sizes_20230812_213410_786070_input_coords.pkl', # Metis Uniform 50%
+                   'mcfs-Uniform-40mins-33parts-write-sizes-20230913-024218-2957359_input_coords.pkl', # Metis Uniform 50%
                    'mcfs-RZDN-90p-40mins-write-sizes-20230905-012406-1129837_input_coords.pkl', # Metis RZDN 90%
-                   'mcfs-RZDN-Inverse-90p-40mins-write-sizes-20230905-025014-1154360_input_coords.pkl' # Metis RZDN Inverse 90%
+                   'mcfs-IRSD-40minutes-33parts-90p-write-sizes-20230913-042245-3004566_input_coords.pkl' # Metis RZDN Inverse 90%
                    ]
 
 figure_dir = '/mcfs/iocov-mcfs-fast24-2023-0723/IOCov/FAST2024/expts-figures'
@@ -76,10 +76,11 @@ ytick_values = [0.1, 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000]
 ytick_labels = ['0', '1', '10', '100', '1K', '10K', '100K', '1M', '10M']
 
 bar_coords = [x_pos - 5 * width / 2, x_pos - 3 * width / 2, x_pos - width / 2, x_pos + width / 2, x_pos + 3 * width / 2, x_pos + 5 * width / 2]
-bar_colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#17becf', '#8c564b']
+# bar_colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#17becf', '#8c564b']
+bar_colors = ['#333333', '#ff7f0e', '#2ca02c', '#FF3333', '#17becf', '#993399']
 edgecolors = ['black', 'black', 'black', 'black', 'black', 'black']
 linewidths = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
-labels = ['CrashMonkey', 'xfstests', 'Syzkaller', 'Metis Uniform', 'Metis RSD', 'Metis IRSD'] # IRSD: Inverse Rank-size distribution
+labels = ['CrashMonkey', 'xfstests', 'Syzkaller', 'Metis Uniform', 'Metis GP', 'Metis IGP'] # IRSD: Inverse Rank-size distribution
 
 # Plot the bars for each testing tool
 for i in range(len(bar_coords)):
@@ -88,7 +89,7 @@ for i in range(len(bar_coords)):
 x_first_label = x_labels[0]
 x_labels[0] = ''
 
-ax.set_xticks(x_pos + width / 2, x_labels, rotation=45, ha='center', fontsize=8)
+ax.set_xticks(x_pos + width / 2, x_labels, ha='center', fontsize=8)
 ax.text(width / 2, 0.005, x_first_label, rotation=45, ha='right', fontsize=8)
 
 # Create a function to define the transformation
