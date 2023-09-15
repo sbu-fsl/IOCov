@@ -6,6 +6,7 @@ matplotlib.rcParams['ps.fonttype'] = 42
 
 plt.rcParams["font.family"] = "Times New Roman"
 
+output_fig_file = 'reffs-perf.pdf'
 
 # Data
 filesystems = ['RefFS', 'Ext4', 'Ext2', 'XFS', 'BtrFS']
@@ -56,5 +57,7 @@ ax.set_ylabel('Number of Operations Or Unique States', fontsize=10)
 #ax.set_title('Number of Operations or Unique States by File System')
 ax.legend()
 
+fig.tight_layout()
+
 # Save the figure as a PDF
-fig.savefig('filesystems-operations-states.pdf', format='pdf', bbox_inches='tight')
+fig.savefig(output_fig_file, format='pdf', bbox_inches='tight')
