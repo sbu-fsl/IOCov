@@ -13,8 +13,8 @@
 
 # SRC="IOCov-HotStorage23-Figures.pdf"
 
-SRC="ALL-FMITF-METIS-Figures.pdf"
-# SRC="Metis-FAST24-Two-Column-Wide-Figures.pdf"
+# SRC="ALL-FMITF-METIS-Figures.pdf"
+SRC="Metis-FAST24-Two-Column-Wide-Figures.pdf"
 
 # ARGS: pagenum fig-name-you-want.pdf
 # generates "fig-name-you-want-ann.pdf" (ANNotated)
@@ -40,19 +40,19 @@ fi
 # FAST'24 Metis and RefFS
 
 # Metis Architecture figure
-get1fig 29 metis-arch-one-col.pdf
+#get1fig 29 metis-arch-one-col.pdf
 # RefFS Architecture figure
-get1fig 30 reffs-arch.pdf
+#get1fig 30 reffs-arch.pdf
 # Input Driver Weights figure
-get1fig 31 input-weights.pdf
+#get1fig 31 input-weights.pdf
 # Swarm Example figure
-get1fig 32 swarm-example.pdf
+#get1fig 32 swarm-example.pdf
 # Simple state exploration figure
-get1fig 33 state-exploration-one-col.pdf
+#get1fig 33 state-exploration-one-col.pdf
 
 # State exploration two-column wide figure
 # get1fig 1 state-exploration.pdf
-# get1fig 3 metis-arch-two-cols.pdf
+get1fig 3 metis-arch-two-cols.pdf
 
 # cleanup
 rm -f temp.pdf
