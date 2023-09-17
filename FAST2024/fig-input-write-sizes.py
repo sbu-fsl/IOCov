@@ -18,7 +18,7 @@ dpi_val = 600
 
 pkl_dir = '/mcfs/iocov-mcfs-fast24-2023-0723/IOCov/FAST2024/input-pickles'
 
-labels = ['CrashMonkey', 'xfstests', 'Syzkaller', 'Metis Uniform', 'Metis GP', 'Metis IGP']
+labels = ['CrashMonkey', 'xfstests', 'Syzkaller', 'Metis-Uniform', 'Metis-RSD', 'Metis-IRSD']
 
 coord_pkl_files = ['fig5_crashmonkey_input_coords.pkl', # CrashMonkey
                    'fig5_xfstests_input_coords.pkl', # xfstests
@@ -80,7 +80,7 @@ bar_coords = [x_pos - 5 * width / 2, x_pos - 3 * width / 2, x_pos - width / 2, x
 bar_colors = ['#333333', '#ff7f0e', '#2ca02c', '#FF3333', '#17becf', '#993399']
 edgecolors = ['black', 'black', 'black', 'black', 'black', 'black']
 linewidths = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
-labels = ['CrashMonkey', 'xfstests', 'Syzkaller', 'Metis Uniform', 'Metis GP', 'Metis IGP'] # IRSD: Inverse Rank-size distribution
+labels = ['CrashMonkey', 'xfstests', 'Syzkaller', 'Metis-Uniform', 'Metis-RSD', 'Metis-IRSD'] # IRSD: Inverse Rank-size distribution
 
 # Plot the bars for each testing tool
 for i in range(len(bar_coords)):

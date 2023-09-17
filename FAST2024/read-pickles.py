@@ -14,7 +14,7 @@ plk_files = ['fig4_input_cov_all_xfstests_xattrs.pkl',
              'input_cov_mcfs_Prob_5factor_40mins_open_flags_20230810_181953_484817.pkl',
              'input_cov_mcfs_Inverse_Prob_5factor_40mins_sequence_pan_20230810_190452_580771.pkl',
              'input_cov_mcfs_Uniform_40mins_write_sizes_20230812_213410_786070.pkl',
-             'mcfs_Uniform_40mins_write_sizes_20230812_213410_786070_input_coords.pkl']
+             'mcfs-Uniform-24hours-33parts-write-sizes-20230908-024720-1683195_input_coords.pkl']
 
 plk_dir = '/mcfs/iocov-mcfs-fast24-2023-0723/IOCov/FAST2024/input-pickles'
 
