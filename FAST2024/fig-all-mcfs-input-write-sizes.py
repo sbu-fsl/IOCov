@@ -175,7 +175,7 @@ ax.set_ylabel('Count', fontweight='bold', fontsize=10)
 # used before
 # ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.2), ncol=len(labels))
 
-ax.legend(fontsize=8, loc='best', ncol=len(labels), frameon=False)
+ax.legend(fontsize=8, loc='best', ncol=len(labels))
 
 ax.set_axisbelow(True)
 ax.grid(axis='y', linestyle='dotted', alpha=0.4)

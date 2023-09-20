@@ -57,9 +57,9 @@ ax.set_axisbelow(True)
 #ax.grid(axis='y', linestyle='-', alpha=0.3)
 
 # Add labels and a legend
-ax.set_xlabel('File Systems (Using RAM Disks)', fontsize=10)
+ax.set_xlabel('File Systems (Using RAM Disks)', fontsize=10, fontweight='bold')
 # ax.set_ylabel('Number of Operations Or Unique States', fontsize=10)
-ax.set_ylabel('# of Ops or States', fontsize=10)
+ax.set_ylabel('# of Ops or States', fontsize=10, fontweight='bold')
 #ax.set_title('Number of Operations or Unique States by File System')
 ax.legend()
 
