@@ -15,7 +15,7 @@ coord_pkl_files = ['mcfs-Uniform-40mins-33parts-write-sizes-20230913-024218-2957
                    'mcfs-Uniform-24hours-33parts-write-sizes-20230908-024720-1683195_input_coords.pkl' 
                    ]
 
-labels = ['Metis-Uniform-40mins', 'Metis-Uniform-4hours', 'Metis-Uniform-24hours']
+labels = ['Metis-write-size-Uniform-40mins', 'Metis-write-size-Uniform-4hours', 'Metis-write-size-Uniform-24hours']
 
 num_tools = len(coord_pkl_files)
 

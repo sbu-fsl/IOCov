@@ -86,6 +86,8 @@ ytick_labels = ['0', '1', '10', '100', '1K', '10K', '100K', '1M', '10M']
 
 plt.yticks(ytick_values, ytick_labels)
 
+ax.tick_params(axis='both', labelsize=10)
+
 ax.set_ylim(ymin = 0.1)
 
 # print('all_data_arr: ', all_data_arr)
@@ -101,11 +103,11 @@ labels = ['CrashMonkey', 'xfstests', 'Syzkaller', 'Metis-Uniform', 'Metis-RSD', 
 for i in range(num_tools):
     ax.bar(bar_coords[i], all_data_arr[i], width, color=bar_colors[i], edgecolor=edgecolors[i], linewidth=linewidths[i], label=labels[i])
 
-ax.set_ylabel('Frequency (log scale base 10)', fontweight='bold')
-ax.set_xlabel('Open Flags', fontweight='bold')
+ax.set_ylabel('Count (log scale base 10)', fontweight='bold', fontsize=10)
+ax.set_xlabel('Open Flags', fontweight='bold', fontsize=10)
 
 # ax.legend(loc='best', ncol=len(labels))
-ax.legend(fontsize='small', loc='upper center', bbox_to_anchor=(0.5, 1.15), ncol=len(labels))
+ax.legend(fontsize=10, loc='upper center', bbox_to_anchor=(0.5, 1.15), ncol=len(labels), frameon=False)
 
 ax.set_axisbelow(True)
 ax.grid(axis='y', linestyle='-', alpha=0.3)
