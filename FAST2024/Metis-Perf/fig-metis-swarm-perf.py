@@ -42,11 +42,11 @@ fig, axs = plt.subplots(1, 2, figsize=(10, 4))
 
 # First subplot
 axs[0].plot(ops_hours, ops_total, '-bo', label='Overall (18 VTs)')
-axs[0].plot(ops_hours, ops_node1, '--rs', label='Metis Node 1 (6 VTs)')
-axs[0].plot(ops_hours, ops_node2, '-.g^', label='Metis Node 2 (6 VTs)')
-axs[0].plot(ops_hours, ops_node3, ':kP', label='Metis Node 3 (6 VTs)')
-axs[0].set_xlabel('Duration (Hours)')
-axs[0].set_ylabel('Number of Operations (Millions)')
+axs[0].plot(ops_hours, ops_node1, '--rs', label='Node 1')
+axs[0].plot(ops_hours, ops_node2, '-.g^', label='Node 2')
+axs[0].plot(ops_hours, ops_node3, ':kP', label='Node 3')
+axs[0].set_xlabel('Duration (Hours)', fontweight='bold', fontsize=20)
+axs[0].set_ylabel('# of Ops (M)', fontweight='bold', fontsize=20)
 # axs[0].set_title('Subplot 1: 2nd Column vs. 3rd Column')
 axs[0].grid(axis='y', linestyle='-', alpha=0.3)
 
@@ -55,18 +55,25 @@ axs[1].plot(states_hours, states_total, '-bo')
 axs[1].plot(states_hours, states_node1, '--rs')
 axs[1].plot(states_hours, states_node2, '-.g^')
 axs[1].plot(states_hours, states_node3, ':kP')
-axs[1].set_xlabel('Duration (Hours)')
-axs[1].set_ylabel('Number of Unique States (Millions)')
+axs[1].set_xlabel('Duration (Hours)', fontweight='bold', fontsize=20)
+axs[1].set_ylabel('# of States (M)', fontweight='bold', fontsize=20)
 # axs[1].set_title('Subplot 2: 2nd Column vs. 4th Column')
 axs[1].grid(axis='y', linestyle='-', alpha=0.3)
 
+axs[0].tick_params(axis='both', labelsize=20)
+axs[1].tick_params(axis='both', labelsize=20)
 
 # Get the legend handles and labels from the first subplot
 handles, labels = axs[0].get_legend_handles_labels()
 
 # Create a single legend for the entire figure using handles and labels from the first subplot
 # fig.legend(handles, labels, loc='upper center')
-fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, 1.05), ncol=4)
+fig.legend(handles, labels, loc='upper center', bbox_to_anchor=(0.5, 1.09), ncol=4, fontsize=20, frameon=False)
+
+titles = ['(a) File System Operations', '(b) Unique Abstract States']
+
+for ax, title in zip(axs, titles):
+    ax.text(0.5, -0.35, title, transform=ax.transAxes, ha='center', va='center', fontsize=22)
 
 # Tight layout
 plt.tight_layout()
