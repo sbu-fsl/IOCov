@@ -16,15 +16,19 @@ statesPerSecond = [349.9, 112.6, 173.8, 8.8, 21.2]
 # X-axis positions for the bars
 x = range(len(filesystems))
 
+# Determine the width and height in inches
+width_inches = 5  # Example width for a two-column area
+height_inches = 2 # Example height, adjust as needed
+
 # Create the figure and axis objects
-fig, ax = plt.subplots()
+# fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(width_inches, height_inches))
 
 # Width of the bars
 bar_width = 0.4
 
-bar1Color='#2547b8'
-bar2Color='#e37d30'
-
+bar1Color='#1f77b4'
+bar2Color='#ff7f0e'
 
 bars1 = ax.bar(x, opsPerSecond, color=bar1Color, width=bar_width, edgecolor='black', linewidth=0.5, hatch='//', label='ops / sec')
 
@@ -35,17 +39,18 @@ ax.set_xticks([i + bar_width / 2 for i in x])
 ax.set_xticklabels(filesystems)
 
 # Set the y-axis tick values and labels
-yticks = [0, 100, 200, 300, 400, 500, 600, 700, 800, 900]  # Adjust the values as needed
+# yticks = [0, 100, 200, 300, 400, 500, 600, 700, 800, 900]  # Adjust the values as needed
+yticks = [0, 200, 400, 600, 800, 1000]
 ax.set_yticks(yticks)
 ax.set_yticklabels(yticks)
 
 #Write values above bar charts
 
 for i, v in enumerate(opsPerSecond):
-    ax.text(i, v + 10, str(v), color=bar1Color, ha='center', va='bottom', fontsize=8)
+    ax.text(i, v + 10, str(v), color=bar1Color, ha='center', va='bottom', fontsize=9)
 
 for i, v in enumerate(statesPerSecond):
-    ax.text(i + bar_width, v + 10, str(v), color=bar2Color, ha='center', va='bottom', fontsize=8)
+    ax.text(i + bar_width, v + 10, str(v), color=bar2Color, ha='center', va='bottom', fontsize=9)
 
 
 ax.set_axisbelow(True)
@@ -53,7 +58,8 @@ ax.set_axisbelow(True)
 
 # Add labels and a legend
 ax.set_xlabel('File Systems (Using RAM Disks)', fontsize=10)
-ax.set_ylabel('Number of Operations Or Unique States', fontsize=10)
+# ax.set_ylabel('Number of Operations Or Unique States', fontsize=10)
+ax.set_ylabel('# of Ops or States', fontsize=10)
 #ax.set_title('Number of Operations or Unique States by File System')
 ax.legend()
 
