@@ -40,12 +40,21 @@ print('Y_data.shape:', Y_data.shape)
 print('Y_data:', Y_data)
 
 std_deviations = [np.std(sublist[:-1]) for sublist in Y_data]
+print('std_deviations: ', std_deviations)
+print('type(std_deviations): ', type(std_deviations))
 
 # Sum of each sublist
-sums = [np.sum(sublist[:-1]) for sublist in Y_data]
-print('sums: ', sums)
+means = [np.mean(sublist[:-1]) for sublist in Y_data]
+print('means: ', means)
+print('type(means): ', type(means))
+
+# Compute Coefficient of Variations (CVs)
+cvs = [(std_dev / mean) * 100 for mean, std_dev in zip(means, std_deviations)]
 
 # Print the results
 for i, std in enumerate(std_deviations):
     print(f"Standard Deviation of Sublist {i + 1}: {std}")
+
+for i, cv in enumerate(cvs):
+    print(f"Coefficient of Variation (CV) of Sublist {i + 1}: {cv}")
 
