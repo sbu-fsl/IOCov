@@ -100,11 +100,18 @@ ax.set_xticks(x_pos + width / 2, x_labels, ha='center', fontsize=8)
 # print('x_pos[1::2]: ', x_pos[1::2])
 # print('x_labels[1::2]]: ', x_labels[1::2])
 
+x_first_label = 'Equals 0'
+
 plt.xticks(x_pos)
-# ax.text(width / 2, 0, x_first_label, rotation=45, ha='right', fontsize=8)
+#ax.text(width / 2, 0, x_first_label, rotation=10, ha='right', fontsize=8)
 
 new_labels = ['' if i % 2 == 0 else label for i, label in enumerate(x_labels)]
-plt.gca().set_xticklabels(new_labels)
+new_labels[0] = x_first_label
+xticks_toset = plt.gca().set_xticklabels(new_labels)
+
+xticks_toset[0].set_rotation(20)
+xticks_toset[0].set_ha('right')
+xticks_toset[0].set_fontsize(8)
 
 # print('x_first_label: ', x_first_label)
 
@@ -164,7 +171,7 @@ plt.yticks(ytick_values, ytick_labels)
 ax.set_ylim(ymin = 0.1)
 
 #ax.set_title('My Bar Chart')
-ax.set_xlabel('Power of 2', fontweight='bold', fontsize=10)
+# ax.set_xlabel('Power of 2', fontweight='bold', fontsize=10)
 ax.set_ylabel('Count', fontweight='bold', fontsize=10)
 
 # Add a legend

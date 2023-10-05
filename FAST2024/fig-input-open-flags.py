@@ -71,7 +71,7 @@ x_pos = np.arange(N_open_flags)
 
 # Determine the width and height in inches
 width_inches = 9  # Example width for a two-column area
-height_inches = 4 # Example height, adjust as needed
+height_inches = 3 # Example height, adjust as needed
 
 # Set up the plot
 fig, ax = plt.subplots(figsize=(width_inches, height_inches))
@@ -95,7 +95,7 @@ ax.set_ylim(ymin = 0.1)
 # Plot the data
 bar_coords = [x_pos - 5 * width / 2, x_pos - 3 * width / 2, x_pos - width / 2, x_pos + width / 2, x_pos + 3 * width / 2, x_pos + 5 * width / 2]
 # bar_colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#17becf', '#8c564b']
-bar_colors = ['#333333', '#ff7f0e', '#2ca02c', '#FF3333', '#17becf', '#993399']
+bar_colors = ['#333333', 'yellow', '#2ca02c', '#FF3333', '#17becf', '#993399']
 edgecolors = ['black', 'black', 'black', 'black', 'black', 'black']
 linewidths = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
 labels = ['CrashMonkey', 'xfstests', 'Syzkaller', 'Metis-Uniform', 'Metis-RSD', 'Metis-IRSD'] # IRSD: Inverse Rank-size distribution
@@ -104,10 +104,10 @@ for i in range(num_tools):
     ax.bar(bar_coords[i], all_data_arr[i], width, color=bar_colors[i], edgecolor=edgecolors[i], linewidth=linewidths[i], label=labels[i])
 
 ax.set_ylabel('Count (log scale base 10)', fontweight='bold', fontsize=10)
-ax.set_xlabel('Open Flags', fontweight='bold', fontsize=10)
+# ax.set_xlabel('Open Flags', fontweight='bold', fontsize=10)
 
 # ax.legend(loc='best', ncol=len(labels))
-ax.legend(fontsize=10, loc='upper center', bbox_to_anchor=(0.5, 1.15), ncol=len(labels), frameon=False)
+ax.legend(fontsize=8.5, loc='upper center', bbox_to_anchor=(0.5, 1.035), ncol=len(labels), frameon=False)
 
 ax.set_axisbelow(True)
 ax.grid(axis='y', linestyle='-', alpha=0.3)

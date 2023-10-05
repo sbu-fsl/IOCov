@@ -54,7 +54,7 @@ Y_data = np.array(Y_data)
 
 # Determine the width and height in inches
 width_inches = 9  # Example width for a two-column area
-height_inches = 4 # Example height, adjust as needed
+height_inches = 3 # Example height, adjust as needed
 
 # Set up the plot
 fig, ax = plt.subplots(figsize=(width_inches, height_inches))
@@ -77,7 +77,7 @@ ytick_labels = ['0', '1', '10', '100', '1K', '10K', '100K', '1M', '10M']
 
 bar_coords = [x_pos - 5 * width / 2, x_pos - 3 * width / 2, x_pos - width / 2, x_pos + width / 2, x_pos + 3 * width / 2, x_pos + 5 * width / 2]
 # bar_colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#17becf', '#8c564b']
-bar_colors = ['#333333', '#ff7f0e', '#2ca02c', '#FF3333', '#17becf', '#993399']
+bar_colors = ['#333333', 'yellow', '#2ca02c', '#FF3333', '#17becf', '#993399']
 edgecolors = ['black', 'black', 'black', 'black', 'black', 'black']
 linewidths = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
 labels = ['CrashMonkey', 'xfstests', 'Syzkaller', 'Metis-Uniform', 'Metis-XD', 'Metis-IXD'] # IRSD: Inverse Rank-size distribution
@@ -89,8 +89,10 @@ for i in range(len(bar_coords)):
 x_first_label = x_labels[0]
 x_labels[0] = ''
 
+x_first_label = 'Equals 0'
+
 ax.set_xticks(x_pos + width / 2, x_labels, ha='center', fontsize=8)
-ax.text(width / 2, 0.005, x_first_label, rotation=45, ha='right', fontsize=8)
+ax.text(width / 2, 0.01, x_first_label, rotation=25, ha='right', fontsize=8)
 
 # Create a function to define the transformation
 def transform(x):
@@ -142,14 +144,14 @@ ax.tick_params(axis='both', labelsize=10)
 ax.set_ylim(ymin = 0.1)
 
 #ax.set_title('My Bar Chart')
-ax.set_xlabel('Power of 2', fontweight='bold', fontsize=10)
+# ax.set_xlabel('Power of 2', fontweight='bold', fontsize=10)
 ax.set_ylabel('Count (log scale base 10)', fontweight='bold', fontsize=10)
 
 # Add a legend
 # ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=len(labels))
 # ax.legend(loc='best', ncol=len(labels))
 # ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.16), ncol=len(labels))
-ax.legend(fontsize=10, loc='upper center', bbox_to_anchor=(0.5, 1.2), ncol=len(labels), frameon=False)
+ax.legend(fontsize=10, loc='center right', bbox_to_anchor=(1.0, 0.8), ncol=2, frameon=False)
 
 ax.set_axisbelow(True)
 ax.grid(axis='y', linestyle='dotted', alpha=0.4)
