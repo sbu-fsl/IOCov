@@ -13,6 +13,11 @@ DUMP_AXIS_FOR_FIG = True
 
 # len(bytes_xaxis) == 129
 def produce_bytes_axes():
+    """
+    For syscall arguments in bytes (e.g., read/write count, lseek offset, 
+    truncate length, setxattr/getxattr size), we create x/y axes for them
+    to plot.  
+    """
     bytes_xaxis = []
     bytes_log2_xaxis = []
     for i in range(len(BOUNDARIES)):
@@ -33,6 +38,9 @@ def produce_bytes_axes():
     return bytes_xaxis, bytes_yaxis, bytes_log2_xaxis
 
 def init_input_coords():
+    """
+    Initialize input_coords for plotting input coverage 
+    """
     input_coords = {}
     for sc, param_list in SYSCALL_ARGS.items():
         if sc not in INPUT_PLOT_IGNORE:
@@ -47,6 +55,9 @@ def init_input_coords():
     return input_coords
 
 def init_output_coords():
+    """
+    Initialize output_coords for plotting output coverage
+    """
     output_coords = {}
     for sc in OUTPUT_SYSCALLS:
         coord_dict = {}
@@ -57,6 +68,9 @@ def init_output_coords():
     return output_coords
 
 def transform_neg_keys(byte_dict):
+    """
+    Transform negative keys to positive keys for byte arguments
+    """
     original_dict = byte_dict.copy()
     for key in original_dict:
         if key < 0:
@@ -70,18 +84,18 @@ def transform_neg_keys(byte_dict):
 
 class TracePlotter:
     """
-        input_coords:
-            key: syscall name
-            value: a dictionary for each parameter
-                (param) key: parameter name
-                (param) value: a dict for coord values
-                    (coord) key: X-axis or Y-axis
-                    (coord) value: list of values
-        output_coords:
-            key: syscall name
-            value: a dictionary for coord values
+    input_coords:
+        key: syscall name
+        value: a dictionary for each parameter
+            (param) key: parameter name
+            (param) value: a dict for coord values
                 (coord) key: X-axis or Y-axis
                 (coord) value: list of values
+    output_coords:
+        key: syscall name
+        value: a dictionary for coord values
+            (coord) key: X-axis or Y-axis
+            (coord) value: list of values
     """
     def __init__(self, plot_dir, plot_title, plot_unfilter, input_cov, output_cov, unfilter_input_cov):
         self.plot_dir = plot_dir
@@ -252,6 +266,7 @@ class TracePlotter:
                         '{}-input-{}-{}.{}'.format(self.plot_prefix, sc, param, self.plot_format)), 
                         bbox_inches='tight',dpi=self.plot_dpi)
                     plt.close('all')
+                # TODO: check if the following else really needs to be removed
                 #else:
                 #    sys.exit('Plot coords error: {} - {}'.format(sc, param))
 
