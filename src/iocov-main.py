@@ -24,7 +24,6 @@ def main(args):
     # Fetch arguments
     need_parse = args.parse
     name_suffix = args.suffix
-    is_mcfs = args.mcfs
     # Define empty input/output coverage dict to be filled by parser or read from pickle files
     input_cov = {}
     output_cov = {}
@@ -40,7 +39,7 @@ def main(args):
             sys.exit('Cov pickle files already exist.')
         
         # Parse LTTng logs and get input/output coverage by calling TraceParser
-        tp = TraceParser(file_path, is_mcfs, name_suffix)
+        tp = TraceParser(file_path, name_suffix)
         input_cov, output_cov, unfilter_input_cov = tp.cal_input_output_cov()
         
         # Write input/output cov to pickle files
@@ -107,7 +106,7 @@ def main(args):
 
 if __name__ == "__main__":
     """
-    IMPORTANT: Need to edit find_testing_filename AND default_lttng_log path AND default_plot_name AND default_is_mcfs
+    IMPORTANT: Need to edit find_testing_filename AND default_lttng_log path  
 
     ################### Example usage commands ###################
     ## Parse LTTng logs and get pickle files for input/output cov only
@@ -134,7 +133,6 @@ if __name__ == "__main__":
 
     ## CrashMonkey example
     default_plot_name = 'crashmonkey'
-    default_is_mcfs = False
     default_lttng_log = 'crashmonkey-lttng-ext4-allrecur-614.log'
 
     ## Syzkaller example
@@ -149,7 +147,6 @@ if __name__ == "__main__":
 
     # Default values for arguments to manually set
     default_plot_name = 'xfstests-xattr-open-dump'
-    default_is_mcfs = False
     default_lttng_log = 'xfstests-lttng-all-related-ext4-all-xattrs-4633.log'
 
     ## For some cases when we need to specify default_plot_name as the first argument of the script
@@ -171,8 +168,6 @@ if __name__ == "__main__":
     parser.add_argument('--json', default=False, action=argparse.BooleanOptionalAction)
     # Need to plot input and/or output coverage
     parser.add_argument('--plot', default=False, action=argparse.BooleanOptionalAction)
-    # Whether it is MCFS, which needs special handling for better accuracy (e.g., handle abstract state system calls)
-    parser.add_argument('--mcfs', default=default_is_mcfs, action=argparse.BooleanOptionalAction)
     # Suffix for the pkl and json file names 
     parser.add_argument('-s','--suffix', default=default_plot_name, type=str, help='the suffix of output file names')
     # Directory to save plots

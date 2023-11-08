@@ -55,11 +55,9 @@ class TraceParser:
             (syscall-return) value: number of hit count of the key
     """
 
-    def __init__(self, path, is_mcfs, name_suffix):
+    def __init__(self, path, name_suffix):
         # The path to the LTTng log file needs to be parsed
         self.path = path 
-        # Boolen whether it is mcfs
-        self.is_mcfs = is_mcfs
         # Suffix of input/output coverage pickle files, which is used 
         # to create other pkl files
         # E.g., 'input-cov-{}.pkl'.format(name_suffix)
@@ -101,10 +99,6 @@ class TraceParser:
         self.valid_fsetxattr = False 
         self.valid_getxattr = False
         self.valid_fgetxattr = False
-        # MCFS related flags
-        if self.is_mcfs:
-            self.ongoing_valid_open_write = False 
-            self.ongoing_valid_open_offset = False 
 
     # syscall_entry_creat:
     # [13:53:21.899920952] (+0.002925575) dhcp193.fsl.cs.sunysb.edu 
@@ -175,17 +169,8 @@ class TraceParser:
             fn_list = find_testing_filename(line, 'filename = ')
             ## Filter 2: relative path (dfd)
             dfd_list = find_number(line, 'dfd = ')
-            # Checking valid open specifically for MCFS
-            # It should not be only O_RDONLY
-            mcfs_valid_open =  False
-            if self.is_mcfs and fg_int != 0:
-                mcfs_valid_open = True
             # if it's for desired mount points (e.g., xfstests test and scratch)
-            if (fn_list or (dfd_list and (int(dfd_list[0]) in self.valid_fds or (int(dfd_list[0]) == AT_FDCWD_VAL and self.valid_cwd)))) and (not self.is_mcfs or (self.is_mcfs and mcfs_valid_open)): 
-                if self.is_mcfs:
-                    self.ongoing_valid_open_write = True
-                    self.ongoing_valid_open_offset = True
-                
+            if fn_list or (dfd_list and (int(dfd_list[0]) in self.valid_fds or (int(dfd_list[0]) == AT_FDCWD_VAL and self.valid_cwd))): 
                 self.valid_open = True
                 # Handling OPEN_DUMP
                 if OPEN_DUMP:
@@ -224,8 +209,6 @@ class TraceParser:
                 else:
                     self.input_cov[scname]['mode'][mode_int] = 1
             else:
-                if self.is_mcfs:
-                    self.ongoing_valid_open_write = False
                 self.valid_open = False
         # open output (syscall_exit_open* syscall_entry_creat)
         else:
@@ -240,11 +223,6 @@ class TraceParser:
                     # valid fd: NOT 0, 1, 2, 255 and pathname is valid
                     if ret_num > 2 and ret_num != 255:
                         self.valid_fds.add(ret_num)
-                    if self.is_mcfs:
-                        if self.ongoing_valid_open_write:
-                            self.ongoing_valid_open_write = False
-                        if self.ongoing_valid_open_offset:
-                            self.ongoing_valid_open_offset = False
                     if ret_num in self.output_cov[scname].keys():
                         self.output_cov[scname][ret_num] += 1
                     else:
@@ -419,7 +397,7 @@ class TraceParser:
             fd_list = find_number(line, 'fd = ')
             if fd_list:
                 fd_int = int(fd_list[0])
-                if fd_int in self.valid_fds or (self.is_mcfs and self.ongoing_valid_open_write):
+                if fd_int in self.valid_fds:
                     self.valid_write = True
                     if count_int in self.input_cov[scname]['count'].keys():
                         self.input_cov[scname]['count'][count_int] += 1
@@ -474,7 +452,7 @@ class TraceParser:
             if fd_list:
                 fd_int = int(fd_list[0])
                 # Only record lseek input and output with valid fds
-                if fd_int in self.valid_fds or (self.is_mcfs and self.ongoing_valid_open_offset):
+                if fd_int in self.valid_fds:
                     self.valid_lseek = True
                     if offset_int in self.input_cov[scname]['offset'].keys():
                         self.input_cov[scname]['offset'][offset_int] += 1
@@ -581,10 +559,7 @@ class TraceParser:
             else:
                 sys.exit('INPUT: {} - no mode error')
             fn_list = []
-            if self.is_mcfs:
-                fn_list = find_mcfs_name(line, 'pathname = ')
-            else:
-                fn_list = find_testing_filename(line, 'pathname = ')
+            fn_list = find_testing_filename(line, 'pathname = ')
             dfd_list = find_number(line, 'dfd = ')
             if fn_list or (dfd_list and int(dfd_list[0]) in self.valid_fds) or (dfd_list and int(dfd_list[0]) == AT_FDCWD_VAL and self.valid_cwd): 
                 self.valid_mkdir = True
