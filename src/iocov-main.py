@@ -2,6 +2,9 @@
 
 """
 The main entry to parse LTTng logs and plot input and output coverage
+IMPORTANT: IT IS RECOMMENDED THAT THE LTTNG LOGS BE OBTAINED FROM A 
+LTTNG RUN ON A SINGLE-CORE MACHINE, TO REDUCE THE ENTANGLEMENT OF 
+SYSCALLS IN MULTI-CORE EXECUTION.
 """
 
 # Import LTTng parser to parse LTTng output logs

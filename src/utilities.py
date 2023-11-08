@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+"""
+Various utilities for IOCov parsing and plotting
+"""
+
 from constants import *
 import re
 import os

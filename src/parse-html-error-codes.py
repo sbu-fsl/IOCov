@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+"""
+Extract error codes from HTML files of system call manuals
+"""
+
 from bs4 import BeautifulSoup
 import errno
 import sys
