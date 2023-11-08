@@ -159,3 +159,58 @@ The copy input coords pickle file:
 ```bash
 cp syzkaller-debug-40mins-2023-0830_input_coords.pkl ../FAST2024/input-pickles/
 ```
+
+## LTTng TRACKING
+
+LTTng gives us the option to track certain processes using their PID. Using this feature, we can efficiently trace syscalls executed by certain process resulting in less noisy LTTng traces. This will result in much cleaner IOCov code and eventually help in calculating input/output coverage for other file systems easily. Documentation is provided here : https://lttng.org/man/1/lttng-track/v2.13/
+We 
+- Tracking PID does not track child processes. Since xfstests spawns various child worker processes, tracking using PID would lead to not tracking all syscalls
+- Through some experiments, we found out that child processes have the same GID as parent proces. Thus, we use GID instead of PID to track xfstests syscalls. We are interested in file system syscalls only, so we can also use the syscall tracking feature provided by LTTng to trace only file system syscalls reducing the noise even further. 
+- LTTng setup and run
+  - Install lttng by following : https://lttng.org/docs/v2.13/
+  - Create a directory /my-dir/my-kernel-trace to store traces
+  - Create a lttng session
+  ```bash
+  sudo lttng create my-kernel-session --output=/my-dir/my-kernel-trace
+  ```
+  - Enable a channel. Set number of buffer and buffer size according to machine memory. 
+  ```bash
+  sudo lttng enable-channel --kernel --num-subbuf=4 --subbuf-size=256M my-channel
+  ```
+  - Enable event. We focus on file system syscalls so we only track relevant ones.
+  ```bash
+   sudo lttng enable-event -c my-channel --kernel --syscall open,openat,creat,read,pread64,write,pwrite64,lseek,llseek,truncate,ftruncate,mkdir,mkdirat,chmod,fchmod,fchmodat,close,close_range,chdir,fchdir
+   ```
+  - Create a new group just for running xfstest
+  ```bash
+  sudo groupadd lttng
+  ```
+
+  - Enable tracking feature. Add the GID for fsgqa group as well. 
+  ```bash
+  sudo lttng track --kernel --session=my-kernel-session --gid=1004,1001
+  ```
+
+  - Write a C program that calls a shell script to run. Before calling the shell script, set the GID of the C program. This way the shell script will have the set GID.
+   ```bash
+  gid_t gid = 1004;
+  int er = setgid(gid);
+  ```
+  ```bash
+  system("./run_fsl_xfstests.sh");
+  ```
+  - After running the C program, start lttng tracing.
+  ```bash
+  sudo lttng start
+  ```
+
+  - Stop lttng tracing when C program finishes
+  ```bash
+  sudo lttng stop
+  ```
+
+  - To view readable logs, use babeltrace
+  ```bash
+  babeltrace /my-dir/my-kernel-trace
+  ```
+
