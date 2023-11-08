@@ -1,18 +1,31 @@
 #!/usr/bin/env python3
 
+"""
+The parser class to parse LTTng logs and get input and output coverage
+Note that this parser only works for LTTng logs, not for any syscall 
+tracer (e.g., strace).
+"""
+
 from constants import *
 from utilities import *
 import sys
 import pickle 
 
+# If Yes, we create open_flag_unfilter and open_flag_filtered to compare
+# which will produce 'open_flag_unfilter_{}.pkl' and 'open_flag_filtered_{}.pkl'
+GET_FLAGS = True
+
+# Init input coverage dict for unfilter and filtered open flags if 
+# GET_FLAGS is True
 open_flag_unfilter = {}
 open_flag_filtered = {}
-# If create open_flag_unfilter and open_flag_filtered
-GET_FLAGS = True
-# Investigate open distributions (number of open/openat/openat2/creat)
-# Save the selected open lines to a file
-OPEN_VARS = SYSCALLS['open']
+
+# If Yes, we investigate open distributions (number of open/openat/openat2/creat)
 OPEN_DUMP = True
+
+# Save the selected open lines to a file ('open_var_count_{}.pkl')
+OPEN_VARS = SYSCALLS['open']
+# Init open_var_count dict
 open_var_count = {}
 if OPEN_DUMP:
     for open_var in OPEN_VARS:
@@ -21,50 +34,60 @@ if OPEN_DUMP:
 # The main class to parse all the input and output 
 class TraceParser:
     """
-        input_cov: 
-            (meta) key: meta-syscall name (e.g., open to represent all 
-                           open syscalls with variants)
-            (meta) value: Dict of each syscall parameter input coverage
-                (syscall) key: parameter name (e.g., mode for open)
-                (syscall) value: dict of all parameters
-                    (param) key: parameter value
-                    (param) value: hit count of parameter value
-            Special cases:
-                if the parameter is flags (e.g., open flags), it will be a 
-                dictionary with the key is the name of bit (e.g., O_CREAT) 
-                and value is the count of using the bits.
-        output_cov:
-            (meta) key: meta-syscall name
-            (meta) value: Dict of hit count of each return value (or error code)
-                (syscall-return) key: return value or error code
-                (syscall-return) value: number of hit count of the key
+    Meta-syscall means the syscall (e.g., open) to represent all variants 
+    (e.g., open, creat, openat, openat2)
+    input_cov: 
+        (meta) key: meta-syscall name (e.g., open to represent all 
+                        open syscalls with variants)
+        (meta) value: Dict of each syscall parameter input coverage
+            (syscall) key: parameter name (e.g., mode for open)
+            (syscall) value: dict of all parameters
+                (param) key: parameter value
+                (param) value: hit count of parameter value
+        Special cases:
+            if the parameter is flags (e.g., open flags), it will be a 
+            dictionary with the key is the name of bit (e.g., O_CREAT) 
+            and value is the count of using the bits.
+    output_cov:
+        (meta) key: meta-syscall name
+        (meta) value: Dict of hit count of each return value (or error code)
+            (syscall-return) key: return value or error code
+            (syscall-return) value: number of hit count of the key
     """
 
     def __init__(self, path, is_mcfs, name_suffix):
+        # The path to the LTTng log file needs to be parsed
         self.path = path 
         # Boolen whether it is mcfs
         self.is_mcfs = is_mcfs
+        # Suffix of input/output coverage pickle files, which is used 
+        # to create other pkl files
+        # E.g., 'input-cov-{}.pkl'.format(name_suffix)
         self.name_suffix = name_suffix
         # Dict to save all (filtered) input coverage
         self.input_cov = init_input_cov() 
         # Dict to save all (filtered) output coverage
         self.output_cov = init_output_cov() 
         # Dict to save all unfiltered input coverage
+        # Note: there is no dict to save all unfiltered output coverage
         self.unfilter_input_cov = init_input_cov() 
-        # Dict to save all unfiltered output coverage
-        # Set to save all the current valid fds
+        # Set to save all the current valid file descriptors (fds) 
         self.valid_fds = set() 
+
         # We set this as True while it has a valid pathname (e.g. /mnt/test 
-        # for xfstests) in entry_open, as thus the next exit_open could 
-        # identify if it's a valid return to analysis
+        # for xfstests) in entry_open, and thus this is a valid syscall 
+        # used for FS testing, and the next exit_open could identify if 
+        # it's a valid return to be included to output coverage calculation
         self.valid_open = False 
         self.valid_close_range = False
-        # the list of fds to be closed for close_range() syscall [Min, Max]
+        # The list of fds to be closed for close_range() syscall [Min, Max]
         self.close_range_fds = []
-        # the fd to be closed for close() syscall
+        # The fd to be closed for close() syscall
         self.close_fd = -1
-        # whether the CURRENT current working directory is for testing
+        # Whether the CURRENT current working directory is for testing
         self.valid_cwd = False
+        # Following are the flags to indicate whether the current syscall 
+        # is valid for input and output coverage calculation
         self.valid_read = False
         self.valid_write = False
         self.valid_lseek = False
@@ -88,10 +111,15 @@ class TraceParser:
     # syscall_entry_creat: { cpu_id = 3 }, { pathname = "XXXXXXXXXXXX.0", mode = 438 }
     # The flag is fixed for syscall_entry_creat (O_CREAT|O_WRONLY|O_TRUNC)
 
-    # open input (syscall_entry_open* syscall_entry_creat): flags and mode
     def handle_open(self, scname, line, is_input):
+        """
+        open input (syscall_entry_open* syscall_entry_creat): flags and mode
+        scname: syscall name
+        line: current line to parse
+        is_input: True if it's input (syscall_entry), False if it's output (syscall_exit)
+        """
         if is_input:
-            ### Unfiltered 
+            ############ Populate Unfiltered Coverage ############
             fg_int = -1
             mode_int = -1
             # HANDLE: open*() flags
@@ -108,6 +136,7 @@ class TraceParser:
                     # if O_RDONLY is set
                     if fg_int & 1 == 0:
                         self.unfilter_input_cov[scname]['flags']['O_RDONLY'] += 1
+                    # if other flags (in OPEN_BIT_FLAGS) are set
                     for each_bit in OPEN_BIT_FLAGS:
                         if fg_int & each_bit == each_bit:
                             self.unfilter_input_cov[scname]['flags'][OPEN_BIT_FLAGS[each_bit]] += 1 
@@ -121,6 +150,7 @@ class TraceParser:
                         open_flag_unfilter[CREAT_FLAG_DEC] += 1
                     else:
                         open_flag_unfilter[CREAT_FLAG_DEC] = 1
+                # creat() flags are fixed, so we can directly add 1
                 self.unfilter_input_cov[scname]['flags']['O_CREAT'] += 1
                 self.unfilter_input_cov[scname]['flags']['O_WRONLY'] += 1
                 self.unfilter_input_cov[scname]['flags']['O_TRUNC'] += 1
@@ -138,8 +168,10 @@ class TraceParser:
             else:
                 sys.exit('INPUT: {} - no mode error'.format(scname))
             
-            ### Filtering 
+            ############ Populate Filtering Coverage ############
             ## Filter 1: path name (open path could be a file or a dir)
+            ## IMPORTANT: MAKE SURE THE find_testing_filename IS CORRECT  
+            ## IN TERMS OF THE TESTING TOOL TO BE ANALYZED
             fn_list = find_testing_filename(line, 'filename = ')
             ## Filter 2: relative path (dfd)
             dfd_list = find_number(line, 'dfd = ')
@@ -155,6 +187,7 @@ class TraceParser:
                     self.ongoing_valid_open_offset = True
                 
                 self.valid_open = True
+                # Handling OPEN_DUMP
                 if OPEN_DUMP:
                     # Dump to the file
                     with open('Open_Var_Lines.txt', 'a') as open_var_f:
@@ -194,10 +227,11 @@ class TraceParser:
                 if self.is_mcfs:
                     self.ongoing_valid_open_write = False
                 self.valid_open = False
-
         # open output (syscall_exit_open* syscall_entry_creat)
         else:
             # if the open is for the test target
+            # TODO: do we need to reset valid_open as False here?
+            # TODO: think about entangling syscall cases
             if self.valid_open:
                 ret = find_number(line, 'ret = ')
                 if ret:
@@ -219,6 +253,11 @@ class TraceParser:
                     sys.exit('OUTPUT: {} - no ret error'.format(scname))
         
     def handle_close(self, scname, line, is_input):
+        """
+        Handle close syscalls, including close and close_range
+        which is important to identify (in)valid fds.  If a fd is 
+        closed, it will be removed from the valid_fds set.
+        """
         # close input (syscall_entry_close*)
         if is_input:
             # close_range
@@ -460,8 +499,8 @@ class TraceParser:
                 else:
                     sys.exit('OUTPUT: lseek - no ret error')
 
-    # truncate syscall: path
-    # ftruncate syscall: fd
+    # truncate syscall: path; truncate(const char *path, off_t length);
+    # ftruncate syscall: fd; ftruncate(int fd, off_t length);
     def handle_truncate(self, scname, line, is_input):
         length_int = -1
         # truncate/ftruncate input
@@ -820,6 +859,10 @@ class TraceParser:
                 sys.exit('OUTPUT: {}/fgetxattr line error'.format(scname))      
 
     def cal_input_output_cov(self):
+        """
+        The function to read the LTTng log path line by line and 
+        calculate input and output coverage for each syscall
+        """
         with open(self.path, 'r', encoding="utf8", errors='ignore') as file:
             lines = file.readlines()
             for line in lines:
