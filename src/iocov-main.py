@@ -145,9 +145,13 @@ if __name__ == "__main__":
     default_plot_name = 'mcfs-Uniform-40mins-write-sizes-20230812-213410-786070'
     """
 
-    # Default values for arguments to manually set
-    default_plot_name = 'xfstests-xattr-open-dump'
-    default_lttng_log = 'xfstests-lttng-all-related-ext4-all-xattrs-4633.log'
+    # EDIT THIS LINE
+    default_lttng_log = 'small-xfstests-lttng-all-related-ext4-all-xattrs-4633.log'
+
+    # Default values for arguments to manually set, no longer used
+    # default_plot_name = 'xfstests-xattr-open-dump'
+
+    default_plot_name = sys.argv[1]
 
     ## For some cases when we need to specify default_plot_name as the first argument of the script
     # default_plot_name_parts = sys.argv[1].split('.')[0].split('-')[2:]

@@ -36,6 +36,7 @@ def find_crashmonkey_filename(text, c):
 
 # Use find_mcfs_filename for MCFS
 # Use find_xfstests_filename for xfstests
+# Use find_crashmonkey_filename for CrashMonkey
 def find_testing_filename(text, c):
     return find_xfstests_filename(text, c)
 

@@ -13,7 +13,7 @@ import pickle
 
 # If Yes, we create open_flag_unfilter and open_flag_filtered to compare
 # which will produce 'open_flag_unfilter_{}.pkl' and 'open_flag_filtered_{}.pkl'
-GET_FLAGS = True
+GET_FLAGS = False
 
 # Init input coverage dict for unfilter and filtered open flags if 
 # GET_FLAGS is True
@@ -21,7 +21,7 @@ open_flag_unfilter = {}
 open_flag_filtered = {}
 
 # If Yes, we investigate open distributions (number of open/openat/openat2/creat)
-OPEN_DUMP = True
+OPEN_DUMP = False
 
 # Save the selected open lines to a file ('open_var_count_{}.pkl')
 OPEN_VARS = SYSCALLS['open']
