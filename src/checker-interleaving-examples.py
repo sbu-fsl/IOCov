@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
 
+#
+# Copyright (c) 2020-2024 Yifei Liu
+# Copyright (c) 2020-2024 Erez Zadok
+# Copyright (c) 2020-2024 Stony Brook University
+# Copyright (c) 2020-2024 The Research Foundation of SUNY
+#
+# You can redistribute it and/or modify it under the terms of the Apache License, 
+# Version 2.0 (http://www.apache.org/licenses/LICENSE-2.0).
+#
+
 line_cnt = [143140, 143766, 145188, 146548, 147548, 149276, 149986, 151020, 151338, 151654]
 
 line_cnt = [x - 1 for x in line_cnt]
