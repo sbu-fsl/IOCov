@@ -1,4 +1,4 @@
-# IOCov: a framework to compute input and output coverage for file system testings
+# Actively Developing Version of IOCov: a framework to compute input and output coverage for file system testings
 
 ## Introduction
 
