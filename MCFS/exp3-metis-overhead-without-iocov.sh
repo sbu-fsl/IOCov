@@ -6,7 +6,7 @@ METIS_SCRIPT_DIR="/mcfs2/IOCov-experiments-2025-0312/metis-iocov-overhead-2025-0
 ORIGINAL_DIR=$(pwd)
 
 FS_TYPES=(ext4 xfs btrfs)
-EXPCONFIG="with-iocov"
+EXPCONFIG="without-iocov"
 # One hour runtime by default
 RUNTIME_SECONDS=3600
 
