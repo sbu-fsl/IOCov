@@ -8,16 +8,17 @@ ORIGINAL_DIR=$(pwd)
 FS_TYPES=(ext4 xfs btrfs)
 EXPCONFIG="with-iocov"
 # One hour runtime by default
-RUNTIME_SECONDS=3600
+DURATION_SECONDS=3600
 
 for FSTYPE in "${FS_TYPES[@]}"; do
-    echo "EXP3 Metis overhead WITHOUT IOCov for filesystem: $FSTYPE"
+    echo "EXP4 Metis overhead WITH IOCov for filesystem: $FSTYPE"
     cd $METIS_SCRIPT_DIR
-    ./only_one_fs.sh $FSTYPE $RUNTIME_SECONDS
+    TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+    ./only_one_fs_iocov_lttng.sh -f $FSTYPE -d $DURATION_SECONDS -e $EXPCONFIG -t $TIMESTAMP
     cd $METIS_STATE_DIR
-    mkdir -p "iocov-overhead-$FSTYPE-$EXPCONFIG-${RUNTIME_SECONDS}secs-$(date +%Y%m%d-%H%M%S)"
-    mv *.log *.csv *.gz *.txt "iocov-overhead-$FSTYPE-$EXPCONFIG-${RUNTIME_SECONDS}secs-$(date +%Y%m%d-%H%M%S)"
+    mkdir -p "iocov-overhead-$FSTYPE-$EXPCONFIG-${DURATION_SECONDS}secs-$TIMESTAMP"
+    mv *.log *.csv *.gz *.txt "iocov-overhead-$FSTYPE-$EXPCONFIG-${DURATION_SECONDS}secs-$TIMESTAMP"
     cd "$ORIGINAL_DIR" || exit 1
 done
 
-echo "All completed for Metis IOCov $FSTYPE-$EXPCONFIG-${RUNTIME_SECONDS}!"
+echo "All completed for Metis IOCov $FSTYPE-$EXPCONFIG-${DURATION_SECONDS}!"
