@@ -41,9 +41,9 @@ bars_l1 = axs[0].bar(x - width/2, xfstests_without_iocov, width, color=colors[0]
 bars_l2 = axs[0].bar(x + width/2, xfstests_with_iocov, width, color=colors[1], edgecolor='black', hatch=hatches[1], label='With IOCov')
 # axs[0].set_title('Left Plot')
 axs[0].set_xticks(x)
-axs[0].set_xticklabels(items)
-axs[0].set_ylabel('Completion Time (s)', fontweight='bold', fontsize=12)
-# axs[0].set_xlabel('File System', fontweight='bold', fontsize=12)
+axs[0].set_xticklabels(items, fontsize=20)
+axs[0].set_ylabel('Completion Time (s)', fontweight='bold', fontsize=20)
+# axs[0].set_xlabel('File System', fontweight='bold', fontsize=20)
 # axs[0].legend(loc='upper left', fontsize=10, frameon=False)
 axs[0].grid(axis='y', linestyle='-', alpha=0.3)
 
@@ -56,9 +56,9 @@ bars_r1 = axs[1].bar(x - width/2, metis_without_iocov, width, color=colors[0], e
 bars_r2 = axs[1].bar(x + width/2, metis_with_iocov, width, color=colors[1], edgecolor='black', hatch=hatches[1])
 # axs[1].set_title('Right Plot')
 axs[1].set_xticks(x)
-axs[1].set_xticklabels(items)
-axs[1].set_ylabel('Operations per second', fontweight='bold', fontsize=12)
-# axs[1].set_xlabel('File System', fontweight='bold', fontsize=12)
+axs[1].set_xticklabels(items, fontsize=20)
+axs[1].set_ylabel('Operations per second', fontweight='bold', fontsize=20)
+# axs[1].set_xlabel('File System', fontweight='bold', fontsize=20)
 axs[1].grid(axis='y', linestyle='-', alpha=0.3)
 
 # axs[1].bar_label(bars_r1, padding=3)
@@ -70,7 +70,7 @@ axs[1].grid(axis='y', linestyle='-', alpha=0.3)
 
 # Create a single legend for both subplots
 handles, labels = axs[0].get_legend_handles_labels()
-fig.legend(handles, labels, loc='lower center', ncol=2, frameon=False, bbox_to_anchor=(0.5, -0.05))
+fig.legend(handles, labels, loc='upper center', ncol=2, frameon=False, bbox_to_anchor=(0.5, 1.09), fontsize=20)
 
 # Adjust layout and save
 plt.tight_layout()
