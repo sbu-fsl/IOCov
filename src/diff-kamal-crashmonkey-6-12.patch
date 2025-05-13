@@ -1,0 +1,2385 @@
+diff --git a/code/Makefile b/code/Makefile
+index 55c5e29..6b7afa9 100644
+--- a/code/Makefile
++++ b/code/Makefile
+@@ -11,6 +11,7 @@ TESTING := testing/log_on_off testing/test_get_log_ent_size
+ 
+ MODULES = cow_brd disk_wrapper
+ obj-m := $(addsuffix .o, $(MODULES))
++CMODULE := $(addsuffix .c, $(MODULES))
+ KDIR := /lib/modules/$(KERNEL_VERSION)/build
+  
+ # Some Makefile magic to get the right include for xattr depending on kernel
+@@ -57,6 +58,9 @@ endif
+ ifeq ($(shell [ $(KERNEL_MAJ) -eq 4 -a $(KERNEL_MIN) -eq 16 ] && echo true), true)
+ DELAY_DEFINE := -DFOUR_SIXTEEN
+ endif
++ifeq ($(shell [ $(KERNEL_MAJ) -eq 6 -a $(KERNEL_MIN) -eq 12 ] && echo true), true)
++DELAY_DEFINE := -DSIX_TWELVE
++endif
+ ifndef CM
+ DELAY_DEFINE := -DTWO_SEC
+ endif
+@@ -118,11 +122,17 @@ all: \
+ 		tests \
+ 		seq1 \
+ 		permuters
++		@echo "DONE"
+ 
+-modules: \
++modules: build-modules move-modules
++build-modules: \
+ 		$(foreach MOD, $(MODULES), $(addsuffix .c, $(MOD))) \
+ 		$(BUILD_DIR)/Makefile
+-	$(MAKE) -C $(KDIR) M=$(BUILD_DIR) src=$(CURDIR) modules
++	$(MAKE) -C $(KDIR) M=$(CURDIR) src=$(CURDIR) modules
++
++move-modules:
++	@mkdir -p $(BUILD_DIR)
++	mv -f *.ko $(BUILD_DIR)/
+ 
+ c_harness: \
+ 		$(BUILD_DIR)/c_harness
+diff --git a/code/bio_alias.h b/code/bio_alias.h
+index b80a1fe..10e1baa 100644
+--- a/code/bio_alias.h
++++ b/code/bio_alias.h
+@@ -74,6 +74,17 @@
+ #define BIO_DISCARD_FLAG        REQ_OP_DISCARD
+ #define BIO_IS_WRITE(bio)       op_is_write(bio_op(bio))
+ 
++#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 8, 0))
++
++#define BI_RW                   bi_opf
++#define BI_DISK                 bi_bdev->bd_disk
++#define BI_SIZE                 bi_iter.bi_size
++#define BI_SECTOR               bi_iter.bi_sector
++#define BIO_ENDIO(bio, err)     bio_endio(bio)
++#define BIO_IO_ERR(bio, err)    bio_io_error(bio)
++#define BIO_DISCARD_FLAG        REQ_OP_DISCARD
++#define BIO_IS_WRITE(bio)       op_is_write(bio_op(bio))
++
+ #else
+ #error "Unsupported kernel version: CrashMonkey has not been tested with " \
+   "your kernel version."
+diff --git a/code/cow_brd.c b/code/cow_brd.c
+index 6ac85ed..32d82f0 100644
+--- a/code/cow_brd.c
++++ b/code/cow_brd.c
+@@ -9,6 +9,7 @@
+  */
+ 
+ #include <linux/init.h>
++#include <linux/initrd.h>
+ #include <linux/module.h>
+ #include <linux/moduleparam.h>
+ #include <linux/major.h>
+@@ -16,11 +17,16 @@
+ #include <linux/bio.h>
+ #include <linux/highmem.h>
+ #include <linux/mutex.h>
+-#include <linux/radix-tree.h>
++#include <linux/pagemap.h>
++#include <linux/xarray.h>
+ #include <linux/fs.h>
+ #include <linux/slab.h>
+-
+-#include <asm/uaccess.h>
++#include <linux/backing-dev.h>
++#include <linux/debugfs.h>
++#include <linux/uaccess.h>
++// #include <asm/uaccess.h>
++#include <linux/blk-mq.h>
++#include <linux/workqueue.h>
+ 
+ #include "disk_wrapper_ioctl.h"
+ #include "bio_alias.h"
+@@ -46,101 +52,62 @@ struct brd_device {
+     bool  is_writable;
+     bool  is_snapshot;
+ 
+-  struct request_queue  *brd_queue;
++    // struct request_queue  *brd_queue;
+     struct gendisk    *brd_disk;
+     struct list_head  brd_list;
+ 
+     /*
+-   * Backing store of pages and lock to protect it. This is the contents
+-   * of the block device.
++     * Backing store of pages. This is the contents of the block device.
+      */
+-  spinlock_t    brd_lock;
+-  struct radix_tree_root  brd_pages;
++    struct xarray	        brd_pages;
++    u64			brd_nr_pages;
+ };
+ 
+ /*
+  * Look up and return a brd's page for a given sector.
+  */
+-static DEFINE_MUTEX(brd_mutex);
++
+ static struct page *brd_lookup_page(struct brd_device *brd, sector_t sector)
+ {
+-  pgoff_t idx;
+-  struct page *page;
+-
+-  /*
+-   * The page lifetime is protected by the fact that we have opened the
+-   * device node -- brd pages will never be deleted under us, so we
+-   * don't need any further locking or refcounting.
+-   *
+-   * This is strictly true for the radix-tree nodes as well (ie. we
+-   * don't actually need the rcu_read_lock()), however that is not a
+-   * documented feature of the radix-tree API so it is better to be
+-   * safe here (we don't have total exclusion from radix tree updates
+-   * here, only deletes).
+-   */
+-  rcu_read_lock();
+-  idx = sector >> PAGE_SECTORS_SHIFT; /* sector to page index */
+-  page = radix_tree_lookup(&brd->brd_pages, idx);
+-  rcu_read_unlock();
+-
+-  BUG_ON(page && page->index != idx);
+-
+-  return page;
++    return xa_load(&brd->brd_pages, sector >> PAGE_SECTORS_SHIFT);
+ }
+ 
++
+ /*
+- * Look up and return a brd's page for a given sector.
+- * If one does not exist, allocate an empty page, and insert that. Then
+- * return it.
++ * Insert a new page for a given sector, if one does not already exist.
+  */
+-static struct page *brd_insert_page(struct brd_device *brd, sector_t sector)
++static int brd_insert_page(struct brd_device *brd, sector_t sector, gfp_t gfp)
+ {
+-  pgoff_t idx;
++    pgoff_t idx = sector >> PAGE_SECTORS_SHIFT;
+     struct page *page;
+-  gfp_t gfp_flags;
+-  void *dst, *parent_src = NULL;
+     struct page *parent_page = NULL;
++    void *dst, *parent_src = NULL;
++    int ret = 0;
+ 
+     page = brd_lookup_page(brd, sector);
+     if (page)
+-    return page;
++        return 0;
+ 
+-  /*
+-   * Must use NOIO because we don't want to recurse back into the
+-   * block or filesystem layers from page reclaim.
+-   *
+-   * Cannot support XIP and highmem, because our ->direct_access
+-   * routine for XIP must return memory that is always addressable.
+-   * If XIP was reworked to use pfns and kmap throughout, this
+-   * restriction might be able to be lifted.
+-   */
+-  gfp_flags = GFP_NOIO | __GFP_ZERO;
+-#ifndef CONFIG_BLK_DEV_XIP
+-  gfp_flags |= __GFP_HIGHMEM;
+-#endif
+-  page = alloc_page(gfp_flags);
++    page = alloc_page(gfp | __GFP_ZERO | __GFP_HIGHMEM);
+     if (!page)
+-    return NULL;
++        return -ENOMEM;
+ 
+-  if (radix_tree_preload(GFP_NOIO)) {
+-    __free_page(page);
+-    return NULL;
+-  }
++    xa_lock(&brd->brd_pages);
++
++    ret = __xa_insert(&brd->brd_pages, idx, page, gfp);
++
++    if (!ret)
++        brd->brd_nr_pages++;
++
++    xa_unlock(&brd->brd_pages);
+ 
+-  spin_lock(&brd->brd_lock);
+-  idx = sector >> PAGE_SECTORS_SHIFT;
+-  page->index = idx;
+-  if (radix_tree_insert(&brd->brd_pages, idx, page)) {
++    if (ret < 0) {
+         __free_page(page);
+-    page = radix_tree_lookup(&brd->brd_pages, idx);
+-    BUG_ON(!page);
+-    BUG_ON(page->index != idx);
++        if (ret == -EBUSY)
++            ret = 0;
+     }
+-  spin_unlock(&brd->brd_lock);
+-
+-  radix_tree_preload_end();
+ 
+-  // Copy over the data in the parent's page to the snapshot page if the parent
++    // Copy over the data from the parent's page to the snapshot page if the parent
+     // has a page in this sector address.
+     if (brd->parent_brd) {
+         parent_page = brd_lookup_page(brd->parent_brd, sector);
+@@ -158,110 +125,76 @@ static struct page *brd_insert_page(struct brd_device *brd, sector_t sector)
+         }
+     }
+ 
+-  return page;
++    return ret;
+ }
+ 
+-static void brd_free_page(struct brd_device *brd, sector_t sector)
+-{
+-  struct page *page;
+-  pgoff_t idx;
+ 
+-  spin_lock(&brd->brd_lock);
+-  idx = sector >> PAGE_SECTORS_SHIFT;
+-  page = radix_tree_delete(&brd->brd_pages, idx);
+-  spin_unlock(&brd->brd_lock);
+-  if (page)
+-    __free_page(page);
+-}
++/*
++ * Zero out a page (set to all 0s)
++ */
++// static void brd_zero_page(struct brd_device *brd, sector_t sector)
++// {
++//     struct page *page;
+ 
+-static void brd_zero_page(struct brd_device *brd, sector_t sector)
+-{
+-  struct page *page;
++//     page = brd_lookup_page(brd, sector);
++//     if (page)
++//       clear_highpage(page);
++// }
+ 
+-  page = brd_lookup_page(brd, sector);
+-  if (page)
+-    clear_highpage(page);
+-}
+ 
+-/*
+- * Free all backing store pages and radix tree. This must only be called when
++/* Free all backing store pages and xarray. This must only be called when
+  * there are no other users of the device.
+  */
+-#define FREE_BATCH 16
+ static void brd_free_pages(struct brd_device *brd)
+ {
+-  unsigned long pos = 0;
+-  struct page *pages[FREE_BATCH];
+-  int nr_pages;
+-
+-  do {
+-    int i;
+-
+-    nr_pages = radix_tree_gang_lookup(&brd->brd_pages,
+-        (void **)pages, pos, FREE_BATCH);
+-
+-    for (i = 0; i < nr_pages; i++) {
+-      void *ret;
++    struct page *page;
++    pgoff_t idx;
+ 
+-      BUG_ON(pages[i]->index < pos);
+-      pos = pages[i]->index;
+-      ret = radix_tree_delete(&brd->brd_pages, pos);
+-      BUG_ON(!ret || ret != pages[i]);
+-      __free_page(pages[i]);
++    xa_for_each(&brd->brd_pages, idx, page) {
++      __free_page(page);
++      cond_resched();
+     }
+ 
+-    pos++;
+-
+-    /*
+-     * This assumes radix_tree_gang_lookup always returns as
+-     * many pages as possible. If the radix-tree code changes,
+-     * so will this have to.
+-     */
+-  } while (nr_pages == FREE_BATCH);
++    xa_destroy(&brd->brd_pages);
+ }
+ 
++
+ /*
+  * copy_to_brd_setup must be called before copy_to_brd. It may sleep.
++ * Allocates the required pages in brd before copying n bytes
+  */
+-static int copy_to_brd_setup(struct brd_device *brd, sector_t sector, size_t n)
++static int copy_to_brd_setup(struct brd_device *brd, sector_t sector, size_t n, gfp_t gfp)
+ {
+     unsigned int offset = (sector & (PAGE_SECTORS-1)) << SECTOR_SHIFT;
+     size_t copy;
++    int ret;
+ 
+     copy = min_t(size_t, n, PAGE_SIZE - offset);
+-  if (!brd_insert_page(brd, sector))
+-    return -ENOMEM;
++    ret = brd_insert_page(brd, sector, gfp);
++    if (ret)
++      return ret;
+     if (copy < n) {
+       sector += copy >> SECTOR_SHIFT;
+-    if (!brd_insert_page(brd, sector))
+-      return -ENOMEM;
++      ret = brd_insert_page(brd, sector, gfp);
+     }
+-  return 0;
++    return ret;
+ }
+ 
+-static void discard_from_brd(struct brd_device *brd,
+-      sector_t sector, size_t n)
+-{
+-  while (n >= PAGE_SIZE) {
+-    /*
+-     * Don't want to actually discard pages here because
+-     * re-allocating the pages can result in writeback
+-     * deadlocks under heavy load.
+-     */
+-    if (0)
+-      brd_free_page(brd, sector);
+-    else
+-      brd_zero_page(brd, sector);
+-    sector += PAGE_SIZE >> SECTOR_SHIFT;
+-    n -= PAGE_SIZE;
+-  }
+-}
++
++// static void discard_from_brd(struct brd_device *brd, sector_t sector, size_t n)
++// {
++//     while (n >= PAGE_SIZE) {
++//         brd_zero_page(brd, sector);
++//       sector += PAGE_SIZE >> SECTOR_SHIFT;
++//       n -= PAGE_SIZE;
++//     }
++// }
++
+ 
+ /*
+  * Copy n bytes from src to the brd starting at sector. Does not sleep.
+  */
+-static void copy_to_brd(struct brd_device *brd, const void *src,
+-      sector_t sector, size_t n)
++static void copy_to_brd(struct brd_device *brd, const void *src, sector_t sector, size_t n)
+ {
+     struct page *page;
+     void *dst;
+@@ -289,11 +222,11 @@ static void copy_to_brd(struct brd_device *brd, const void *src,
+     }
+ }
+ 
++
+ /*
+  * Copy n bytes to dst from the brd starting at sector. Does not sleep.
+  */
+-static void copy_from_brd(void *dst, struct brd_device *brd, sector_t sector,
+-    size_t n)
++static void copy_from_brd(void *dst, struct brd_device *brd, sector_t sector, size_t n)
+ {
+     struct page *page;
+     void *src;
+@@ -303,19 +236,17 @@ static void copy_from_brd(void *dst, struct brd_device *brd, sector_t sector,
+     copy = min_t(size_t, n, PAGE_SIZE - offset);
+     page = brd_lookup_page(brd, sector);
+     if (page) {
+-    // Present in the new radix tree so this page has been modified.
++        // Present in the new xarray, so this page has been modified.
+         src = kmap_atomic(page);
+         memcpy(dst, src + offset, copy);
+         kunmap_atomic(src);
+-  } else if (brd->parent_brd &&
+-      (page = brd_lookup_page(brd->parent_brd, sector))) {
+-    // Present in the old radix tree so this page has not been modified.
++    } else if (brd->parent_brd && (page = brd_lookup_page(brd->parent_brd, sector))) {
++        // Present in the old xarray, so this page has not been modified.
+         src = kmap_atomic(page);
+         memcpy(dst, src + offset, copy);
+         kunmap_atomic(src);
+     } else {
+-    // Page doesn't exist in either radix tree so it must never have been
+-    // written.
++          // Page doesn't exist in either of the xarray, so it must never have been written
+           memset(dst, 0, copy);
+     }
+ 
+@@ -325,7 +256,6 @@ static void copy_from_brd(void *dst, struct brd_device *brd, sector_t sector,
+         copy = n - copy;
+         page = brd_lookup_page(brd, sector);
+         if (page) {
+-      // Present in the new radix tree so this page has been modified.
+             src = kmap_atomic(page);
+             memcpy(dst, src, copy);
+             kunmap_atomic(src);
+@@ -336,31 +266,35 @@ static void copy_from_brd(void *dst, struct brd_device *brd, sector_t sector,
+             memcpy(dst, src, copy);
+             kunmap_atomic(src);
+       } else {
+-      // Page doesn't exist in either radix tree so it must never have been
+-      // written.
+             memset(dst, 0, copy);
+       }         
+     }
+ }
+ 
++
+ /*
+- * Process a single bvec of a bio.
++ * Process a single bvec (one chunk) of a bio (block I/O).
+  */
+ static int brd_do_bvec(struct brd_device *brd, struct page *page,
+-      unsigned int len, unsigned int off, bool is_write,
+-      sector_t sector)
++      unsigned int len, unsigned int off, blk_opf_t opf, sector_t sector)
+ {
+     void *mem;
+     int err = 0;
+ 
+-  if (is_write) {
+-    err = copy_to_brd_setup(brd, sector, len);
++    if (op_is_write(opf)) {
++        /*
++        * Must use NOIO because we don't want to recurse back into the
++        * block or filesystem layers from page reclaim.
++        */
++        gfp_t gfp = opf & REQ_NOWAIT ? GFP_NOWAIT : GFP_NOIO;
++
++        err = copy_to_brd_setup(brd, sector, len, gfp);
+         if (err)
+             goto out;
+     }
+ 
+     mem = kmap_atomic(page);
+-  if (!is_write) {
++    if (!op_is_write(opf)) {
+         copy_from_brd(mem + off, brd, sector, len);
+         flush_dcache_page(page);
+     } else {
+@@ -373,77 +307,80 @@ out:
+     return err;
+ }
+ 
+-#if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 4, 0)
+-static void brd_make_request(struct request_queue *q, struct bio *bio) {
+-#else
+-static blk_qc_t brd_make_request(struct request_queue *q, struct bio *bio) {
+-#endif
+-  struct brd_device *brd = bio->BI_DISK->private_data;
++
++int disk_size = DEFAULT_COW_RD_SIZE;
++
++static void brd_do_discard(struct brd_device *brd, sector_t sector, u32 size)
++{
++	sector_t aligned_sector = (sector + PAGE_SECTORS) & ~PAGE_SECTORS;
++	struct page *page;
++
++	size -= (aligned_sector - sector) * SECTOR_SIZE;
++	xa_lock(&brd->brd_pages);
++	while (size >= PAGE_SIZE && aligned_sector < disk_size * 2) {
++      page = __xa_erase(&brd->brd_pages, aligned_sector >> PAGE_SECTORS_SHIFT);
++      if (page)
++        __free_page(page);
++      aligned_sector += PAGE_SECTORS;
++      size -= PAGE_SIZE;
++	}
++	xa_unlock(&brd->brd_pages);
++}
++
++
++//Used instead of brd_make_request
++static void brd_submit_bio(struct bio *bio){	
++    struct brd_device *brd = bio->bi_bdev->bd_disk->private_data;
++    sector_t sector = bio->bi_iter.bi_sector;
++    struct bio_vec bvec;
++    struct bvec_iter iter;
+     bool rw;
+-  sector_t sector;
+-  int err = -EIO;
+ 
+-  sector = bio->BI_SECTOR;
+     if (bio_end_sector(bio) > get_capacity(bio->BI_DISK)) {
+-    goto out_err;
++        bio_io_error(bio);
++        return;
+     }
+ 
+     rw = BIO_IS_WRITE(bio);
++    // bio->bi_opf |= REQ_SYNC;
+ 
+     if ((rw || bio->BI_RW & BIO_DISCARD_FLAG) && !brd->is_writable) {
+-    goto out_err;
++        bio_io_error(bio);
++        return;
+     }
+ 
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 9, 0)
+-  if (unlikely(bio->BI_RW & BIO_DISCARD_FLAG)) {
+-#else
+-  if (unlikely(bio_op(bio) == BIO_DISCARD_FLAG)) {
+-#endif
+-    err = 0;
+-    discard_from_brd(brd, sector, bio->BI_SIZE);
+-    goto out;
++    if (unlikely(op_is_discard(bio->bi_opf))) {
++        brd_do_discard(brd, sector, bio->bi_iter.bi_size);
++        bio_endio(bio);
++        return;
+     }
+ 
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)
+-  struct bio_vec *bvec;
+-  int iter;
+-  bio_for_each_segment(bvec, bio, iter) {
+-    unsigned int len = bvec->bv_len;
+-    err = brd_do_bvec(brd, bvec->bv_page, len,
+-          bvec->bv_offset, rw, sector);
+-    if (err) {
+-      goto out_err;
+-    }
+-    sector += len >> SECTOR_SHIFT;
+-  }
+-#else
+-  struct bio_vec bvec;
+-  struct bvec_iter iter;
+     bio_for_each_segment(bvec, bio, iter) {
+       unsigned int len = bvec.bv_len;
+-    err = brd_do_bvec(brd, bvec.bv_page, len,
+-          bvec.bv_offset, rw, sector);
++      int err;
++
++      /* Don't support un-aligned buffer */
++      WARN_ON_ONCE((bvec.bv_offset & (SECTOR_SIZE - 1)) ||
++      		(len & (SECTOR_SIZE - 1)));
++
++      err = brd_do_bvec(brd, bvec.bv_page, len, bvec.bv_offset,
++            bio->bi_opf, sector);
++
+       if (err) {
+-      goto out_err;
++          if (err == -ENOMEM && bio->bi_opf & REQ_NOWAIT) {
++              bio_wouldblock_error(bio);
++              return;
++          }
++          bio_io_error(bio);
++          return;
+ 		}
+       sector += len >> SECTOR_SHIFT;
+     }
+-#endif
+ 
+-out:
+-  BIO_ENDIO(bio, err);
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)
+-  return;
+-#else
+-  return BLK_QC_T_NONE;
+-#endif
+-out_err:
+-  BIO_IO_ERR(bio, err);
+-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 5, 0)
+-  return BLK_QC_T_NONE;
+-#endif
++    bio_endio(bio);
+ }
+ 
++
+ #ifdef CONFIG_BLK_DEV_XIP
+ static int brd_direct_access(struct block_device *bdev, sector_t sector,
+       void **kaddr, unsigned long *pfn)
+@@ -467,6 +404,9 @@ static int brd_direct_access(struct block_device *bdev, sector_t sector,
+ }
+ #endif
+ 
++/*
++  Handle custom IOCTL commands sent to the brd_device
++ */
+ static int brd_ioctl(struct block_device *bdev, fmode_t mode,
+       unsigned int cmd, unsigned long arg)
+ {
+@@ -506,40 +446,48 @@ static int brd_ioctl(struct block_device *bdev, fmode_t mode,
+     return error;
+ }
+ 
++
+ static const struct block_device_operations brd_fops = {
+     .owner =		THIS_MODULE,
++    .submit_bio =		brd_submit_bio,
+     .ioctl =    brd_ioctl,
+ #ifdef CONFIG_BLK_DEV_XIP
+     .direct_access =  brd_direct_access,
+ #endif
+ };
+ 
++
+ /*
+  * And now the modules code and kernel interface.
+  */
+ int major_num = 0;
+ static int num_disks = 1;
+ static int num_snapshots = 1;
+-int disk_size = DEFAULT_COW_RD_SIZE;
+-static int max_part;
+-static int part_shift;
+-module_param(num_disks, int, S_IRUGO);
++// int disk_size = DEFAULT_COW_RD_SIZE;
++static int max_part = 1;
++// static int part_shift;
++
++module_param(num_disks, int, 0444);
+ MODULE_PARM_DESC(num_disks, "Maximum number of ram block devices");
+-module_param(num_snapshots, int, S_IRUGO);
++module_param(num_snapshots, int, 0444);
+ MODULE_PARM_DESC(num_snapshots, "Number of ram block snapshot devices where "
+     "each disk gets it's own snapshot");
+-module_param(disk_size, int, S_IRUGO);
++module_param(disk_size, int, 0444);
+ MODULE_PARM_DESC(disk_size, "Size of each RAM disk in kbytes.");
+-module_param(max_part, int, S_IRUGO);
++module_param(max_part, int, 0444);
+ MODULE_PARM_DESC(max_part, "Maximum number of partitions per RAM disk");
++
++
++MODULE_DESCRIPTION("Ram backed block device driver");
+ MODULE_LICENSE("GPL");
+ MODULE_ALIAS_BLOCKDEV_MAJOR(RAMDISK_MAJOR);
++MODULE_ALIAS("cow_brd");
+ 
+ #ifndef MODULE
+ /* Legacy boot options - nonmodular */
+ static int __init ramdisk_size(char *str)
+ {
+-  rd_size = simple_strtol(str, NULL, 0);
++    disk_size = simple_strtol(str, NULL, 0);
+       return 1;
+ }
+ __setup("ramdisk_size=", ramdisk_size);
+@@ -550,94 +498,79 @@ __setup("ramdisk_size=", ramdisk_size);
+  * (should share code eventually).
+  */
+ static LIST_HEAD(brd_devices);
+-static DEFINE_MUTEX(brd_devices_mutex);
++static struct dentry *brd_debugfs_dir;
+ 
+-static struct brd_device *brd_alloc(int i)
++static int brd_alloc(int i)
+ {
+-  struct brd_device *brd;
++    struct brd_device *brd, *parent_brd;
+     struct gendisk *disk;
++    char buf[DISK_NAME_LEN];
++    int err = -ENOMEM;
++    struct queue_limits lim = {
++      /*
++        * This is so fdisk will align partitions on 4k, because of
++        * direct_access API needing 4k alignment, returning a PFN
++        * (This is only a problem on very small devices <= 4M,
++        *  otherwise fdisk will align on 1M. Regardless this call
++        *  is harmless)
++        */
++      .physical_block_size	= PAGE_SIZE,
++      .max_hw_discard_sectors	= UINT_MAX,
++      .max_discard_segments	= 1,
++      .discard_granularity	= PAGE_SIZE,
++      .features		= BLK_FEAT_SYNCHRONOUS |
++              BLK_FEAT_NOWAIT,
++    };
++
++    list_for_each_entry(brd, &brd_devices, brd_list)
++        if (brd->brd_number == i)
++            return -EEXIST;
+ 
+     brd = kzalloc(sizeof(*brd), GFP_KERNEL);
+     if (!brd)
+-    goto out;
+-  brd->brd_number   = i;
++      return -ENOMEM;
+ 
++    brd->brd_number		= i;
+     // True on disks until "snapshot" ioctl is called.
+     brd->is_writable = true;
+     brd->is_snapshot = i >= num_disks;
++    list_add_tail(&brd->brd_list, &brd_devices);
+ 
+-  spin_lock_init(&brd->brd_lock);
+-  INIT_RADIX_TREE(&brd->brd_pages, GFP_ATOMIC);
+-
+-  brd->brd_queue = blk_alloc_queue(GFP_KERNEL);
+-  if (!brd->brd_queue)
+-    goto out_free_dev;
+-  blk_queue_make_request(brd->brd_queue, brd_make_request);
+-  blk_queue_max_hw_sectors(brd->brd_queue, 1024);
+-  blk_queue_bounce_limit(brd->brd_queue, BLK_BOUNCE_ANY);
+-
+-  brd->brd_queue->limits.discard_granularity = PAGE_SIZE;
+-  brd->brd_queue->limits.max_discard_sectors = UINT_MAX;
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 12, 0)
+-  brd->brd_queue->limits.discard_zeroes_data = 1;
+-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(5, 5, 0) && \
+-     LINUX_VERSION_CODE < KERNEL_VERSION(5, 5, 3) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(5, 6, 7))
+-  blk_queue_flag_set(QUEUE_FLAG_DISCARD, brd->brd_queue);
+-#else
+-  queue_flag_set_unlocked(QUEUE_FLAG_DISCARD, brd->brd_queue);
+-#endif
++    xa_init(&brd->brd_pages);
+ 
+-  disk = brd->brd_disk = alloc_disk(1 << part_shift);
+-  if (!disk)
+-    goto out_free_queue;
+-  disk->major   = major_num;
+-  disk->first_minor = i << part_shift;
+-  disk->fops    = &brd_fops;
+-  disk->private_data  = brd;
+-  disk->queue   = brd->brd_queue;
+-  disk->flags |= GENHD_FL_SUPPRESS_PARTITION_INFO;
+     if (brd->is_snapshot) {
+-    sprintf(disk->disk_name, "cow_ram_snapshot%d_%d", i / num_disks,
++        snprintf(buf, DISK_NAME_LEN, "cow_ram_snapshot%d_%d", i / num_disks,
+           i % num_disks);
+-  } else {
+-    sprintf(disk->disk_name, "cow_ram%d", i);
+       }
+-  set_capacity(disk, disk_size * 2);
+-
+-  return brd;
+-
+-out_free_queue:
+-  blk_cleanup_queue(brd->brd_queue);
+-out_free_dev:
+-  kfree(brd);
+-out:
+-  return NULL;
++    else {
++      snprintf(buf, DISK_NAME_LEN, "cow_ram%d", i);
+     }
+     
+-static void brd_free(struct brd_device *brd)
+-{
+-  put_disk(brd->brd_disk);
+-  blk_cleanup_queue(brd->brd_queue);
+-  brd_free_pages(brd);
+-  kfree(brd);
++    if (!IS_ERR_OR_NULL(brd_debugfs_dir))
++        debugfs_create_u64(buf, 0444, brd_debugfs_dir,
++          &brd->brd_nr_pages);
++
++    disk = brd->brd_disk = blk_alloc_disk(&lim, NUMA_NO_NODE);
++    if (IS_ERR(disk)) {
++        err = PTR_ERR(disk);
++        goto out_free_dev;
+     }
+ 
+-static struct brd_device *brd_init_one(int i)
+-{
+-  struct brd_device *brd, *parent_brd;
++    // brd->brd_queue = disk->queue;
++    // if (!brd->brd_queue)
++    //     goto out_free_dev;
+ 
+-  list_for_each_entry(brd, &brd_devices, brd_list) {
+-    if (brd->brd_number == i) {
+-      goto out;
+-    }
+-  }
++    disk->major		= major_num;
++    disk->first_minor	= i * max_part; 
++    disk->fops		= &brd_fops;
++    disk->private_data	= brd;
++    disk->minors		= max_part; // max_part = 1
++    strscpy(disk->disk_name, buf, DISK_NAME_LEN);
++    set_capacity(disk, disk_size * 2);
+ 
+-  brd = brd_alloc(i);
+-  if (brd) {
+-    add_disk(brd->brd_disk);
+-    list_add_tail(&brd->brd_list, &brd_devices);
++    err = add_disk(disk);
++    if (err)
++        goto out_cleanup_disk;
+ 
+     if (i >= num_disks) {
+         // Set the parent pointer for this device.
+@@ -650,47 +583,75 @@ static struct brd_device *brd_init_one(int i)
+     } else {
+         brd->parent_brd = NULL;
+     }
+-  }
+-out:
+-  return brd;
++
++    return 0;
++
++out_cleanup_disk:
++    put_disk(disk);
++out_free_dev:
++    list_del(&brd->brd_list);
++    kfree(brd);
++    return err;
+ }
+ 
+-static void brd_del_one(struct brd_device *brd)
++
++// static void brd_probe(dev_t dev)
++// {
++//     brd_alloc(MINOR(dev) / max_part);
++// }
++
++
++static void brd_cleanup(void)
+ {
+-  list_del(&brd->brd_list);
++    struct brd_device *brd, *next;
++
++    debugfs_remove_recursive(brd_debugfs_dir);
++
++    list_for_each_entry_safe(brd, next, &brd_devices, brd_list) {
++
++        pr_info("cow: cleaning up brd num %d\n", brd->brd_number);
++
+         del_gendisk(brd->brd_disk);
+-  brd_free(brd);
++        put_disk(brd->brd_disk);
++        brd_free_pages(brd);
++        list_del(&brd->brd_list);
++        kfree(brd);
++    }
+ }
+ 
+-static struct kobject *brd_probe(dev_t dev, int *part, void *data)
++
++static inline void brd_check_and_reset_par(void)
+ {
+-  struct brd_device *brd;
+-  struct kobject *kobj;
+-
+-  mutex_lock(&brd_devices_mutex);
+-  brd = brd_init_one(MINOR(dev) >> part_shift);
+-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 16, 0) && \
+-  LINUX_VERSION_CODE < KERNEL_VERSION(4, 17, 0) || \
+-  LINUX_VERSION_CODE >= KERNEL_VERSION(5, 5, 0) && \
+-     LINUX_VERSION_CODE < KERNEL_VERSION(5, 5, 3) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(5, 6, 7))
+-  kobj = brd ? get_disk_and_module(brd->brd_disk) : NULL;
+-#else
+-  kobj = brd ? get_disk(brd->brd_disk) : NULL;
+-#endif
+-  mutex_unlock(&brd_devices_mutex);
++    if (unlikely(!max_part))
++        max_part = 1;
++
++    /*
++    * make sure 'max_part' can be divided exactly by (1U << MINORBITS),
++    * otherwise, it is possiable to get same dev_t when adding partitions.
++    */
++    if ((1U << MINORBITS) % max_part != 0) // MINORBITS = 20
++        max_part = 1UL << fls(max_part);
+ 
+-  *part = 0;
+-  return kobj;
++    if (max_part > DISK_MAX_PARTS) {
++        pr_info("brd: max_part can't be larger than %d, reset max_part = %d.\n",
++          DISK_MAX_PARTS, DISK_MAX_PARTS);
++        max_part = DISK_MAX_PARTS;
++    }
+ }
+ 
++
+ static int __init brd_init(void)
+ {
+-  int i;
++    printk(KERN_WARNING DEVICE_NAME ": Initializing device\n");
++
++    int err, i;
++
++    brd_check_and_reset_par();
++    brd_debugfs_dir = debugfs_create_dir("ramdisk_pages", NULL);
++
++    // 1 base + #Snapshots
+     const int nr = num_disks * (1 + num_snapshots);
+-  unsigned long range;
+-  struct brd_device *brd, *next, *parent_brd;
++    printk(KERN_WARNING DEVICE_NAME ": Counting NR %d\n", nr);
+ 
+     major_num = register_blkdev(major_num, DEVICE_NAME);
+     if (major_num <= 0) {
+@@ -698,105 +659,45 @@ static int __init brd_init(void)
+       return -EIO;
+     }
+ 
++    for (i = 0; i < nr; i++) {
++        err = brd_alloc(i);
++        if (err)
++            goto out_free;
++    }
+     /*
+     * brd module now has a feature to instantiate underlying device
+     * structure on-demand, provided that there is an access dev node.
+-   * However, this will not work well with user space tool that doesn't
+-   * know about such "feature".  In order to not break any existing
+-   * tool, we do the following:
+     *
+-   * (1) if rd_nr is specified, create that many upfront, and this
+-   *     also becomes a hard limit.
+-   * (2) if rd_nr is not specified, create CONFIG_BLK_DEV_RAM_COUNT
+-   *     (default 16) rd device on module load, user can further
+-   *     extend brd device by create dev node themselves and have
+-   *     kernel automatically instantiate actual device on-demand.
++    * (1) if rd_nr is specified, create that many upfront. else
++    *     it defaults to CONFIG_BLK_DEV_RAM_COUNT
++    * (2) User can further extend brd devices by create dev node themselves
++    *     and have kernel automatically instantiate actual device
++    *     on-demand. Example:
++    *		mknod /path/devnod_name b 1 X	# 1 is the rd major
++    *		fdisk -l /path/devnod_name
++    *	If (X / max_part) was not already created it will be created
++    *	dynamically.
+     */
+ 
+-  part_shift = 0;
+-  if (max_part > 0) {
+-    part_shift = fls(max_part);
+-
+-    /*
+-     * Adjust max_part according to part_shift as it is exported
+-     * to user space so that user can decide correct minor number
+-     * if [s]he want to create more devices.
+-     *
+-     * Note that -1 is required because partition 0 is reserved
+-     * for the whole disk.
+-     */
+-    max_part = (1UL << part_shift) - 1;
+-  }
+-
+-  if ((1UL << part_shift) > DISK_MAX_PARTS) {
+-    return -EINVAL;
+-  }
+-
+-  if (nr > 1UL << (MINORBITS - part_shift)) {
+-    return -EINVAL;
+-  }
+-
+-  range = nr << part_shift;
+-
+-  // The first num_disks devices are the actual disks, the rest are snapshot
+-  // devices.
+-  for (i = 0; i < nr; i++) {
+-    brd = brd_alloc(i);
+-    if (!brd) {
+-      goto out_free;
+-    }
+-    list_add_tail(&brd->brd_list, &brd_devices);
+-
+-    // Set the parent pointer for this device.
+-    if (i >= num_disks) {
+-      list_for_each_entry(parent_brd, &brd_devices, brd_list) {
+-        if (parent_brd->brd_number == i % num_disks) {
+-          brd->parent_brd = parent_brd;
+-          break;
+-        }
+-      }
+-    } else {
+-      brd->parent_brd = NULL;
+-    }
+-  }
+-
+-  /* point of no return */
+-
+-  list_for_each_entry(brd, &brd_devices, brd_list)
+-    add_disk(brd->brd_disk);
+-
+-  blk_register_region(MKDEV(RAMDISK_MAJOR, 0), range,
+-          THIS_MODULE, brd_probe, NULL, NULL);
+-
++    pr_info("cow_brd: module loaded\n");
+     printk(KERN_INFO DEVICE_NAME ": module loaded with %d disks and %d snapshots"
+         "\n", num_disks, num_disks * num_snapshots);
+     return 0;
+ 
+ out_free:
+-  list_for_each_entry_safe(brd, next, &brd_devices, brd_list) {
+-    list_del(&brd->brd_list);
+-    brd_free(brd);
+-  }
+-  unregister_blkdev(major_num, DEVICE_NAME);
+-
+-  return -ENOMEM;
++    brd_cleanup();
++    pr_info("cow_brd: module NOT loaded !!!\n");
++    return err;
+ }
+ 
+ static void __exit brd_exit(void)
+ {
+-  unsigned long range;
+-  struct brd_device *brd, *next;
+-
+-  range = (num_disks * (1 + num_snapshots)) << part_shift;
+-
+-  list_for_each_entry_safe(brd, next, &brd_devices, brd_list)
+-    brd_del_one(brd);
+-
+-  blk_unregister_region(MKDEV(major_num, 0), range);
++    pr_info("cow_brd: Cleaning up the device...\n");
++    brd_cleanup();
+     unregister_blkdev(major_num, DEVICE_NAME);
+-  printk(KERN_INFO DEVICE_NAME ": module unloaded\n");
++    
++    pr_info("brd: module unloaded\n");
+ }
+ 
+ module_init(brd_init);
+ module_exit(brd_exit);
+-
+diff --git a/code/cow_brd.mod b/code/cow_brd.mod
+new file mode 100644
+index 0000000..cfed0f9
+--- /dev/null
++++ b/code/cow_brd.mod
+@@ -0,0 +1 @@
++/home/kamal/crashmonkey-iocov/code/cow_brd.o
+diff --git a/code/disk_wrapper.c b/code/disk_wrapper.c
+index 88d746a..76fd79a 100644
+--- a/code/disk_wrapper.c
++++ b/code/disk_wrapper.c
+@@ -48,30 +48,12 @@ static struct hwm_device {
+     u8* data;
+     struct gendisk* gd;
+     bool log_on;
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 12, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0))
+-  struct block_device* target_dev;
+-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 17, 0) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 5, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(5, 5, 3)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(5, 6, 7))
++
+     struct gendisk* target_dev;
+     u8 target_partno;
+     struct block_device* target_bd;
+-#else
+-#error "Unsupported kernel version: CrashMonkey has not been tested with " \
+-  "your kernel version."
+-#endif
++    // struct file *bdev_file;
++    
+     // Pointer to first write op in the chain.
+     struct disk_write_op* writes;
+     // Pointer to last write op in the chain.
+@@ -83,12 +65,14 @@ static struct hwm_device {
+ 
+ static bool should_log(struct bio *bio);
+ 
+-static void free_logs(void) {
++static void free_logs(void) 
++{
+     // Remove all writes.
+     ktime_t curr_time;
+     struct disk_write_op *first = NULL;
+     struct disk_write_op* w = Device.writes;
+     struct disk_write_op* tmp_w;
++
+     while (w != NULL) {
+       kfree(w->data);
+       tmp_w = w;
+@@ -96,7 +80,7 @@ static void free_logs(void) {
+       kfree(tmp_w);
+     }
+ 
+-  // Create default first checkpoint at start of log.
++    // Create a fresh checkpoint as the starting point
+     first = kzalloc(sizeof(struct disk_write_op), GFP_NOIO);
+     if (first == NULL) {
+       printk(KERN_WARNING "hwm: error allocating default checkpoint\n");
+@@ -113,9 +97,10 @@ static void free_logs(void) {
+     Device.current_checkpoint = 1;
+ }
+ 
+-// TODO(ashmrtn): Add mutexes/locking to make thread-safe.
++
+ static int disk_wrapper_ioctl(struct block_device* bdev, fmode_t mode,
+-    unsigned int cmd, unsigned long arg) {
++    unsigned int cmd, unsigned long arg) 
++{
+     int ret = 0;
+     unsigned int not_copied;
+     struct disk_write_op *checkpoint = NULL;
+@@ -126,30 +111,26 @@ static int disk_wrapper_ioctl(struct block_device* bdev, fmode_t mode,
+           printk(KERN_INFO "hwm: turning off data logging\n");
+           Device.log_on = false;
+           break;
++
+       case HWM_LOG_ON:
+           printk(KERN_INFO "hwm: turning on data logging\n");
+           Device.log_on = true;
+           break;
++
+       case HWM_GET_LOG_META:
+           //printk(KERN_INFO "hwm: getting next log entry meta\n");
+           if (Device.current_log_write == NULL) {
+             printk(KERN_WARNING "hwm: no log entry here \n");
+             return -ENODATA;
+           }
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 5, 0) && \
+-      LINUX_VERSION_CODE < KERNEL_VERSION(5, 5, 3)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(5, 6, 7))
+-      if (!access_ok((void*) arg,
+-#else
+-      if (!access_ok(VERIFY_WRITE, (void*) arg,
+-#endif
+-            sizeof(struct disk_write_op_meta))) {
++
++          if (!access_ok((void*) arg, sizeof(struct disk_write_op_meta))) {
+             // TODO(ashmrtn): Find right error code.
+             printk(KERN_WARNING "hwm: bad user land memory pointer in log entry"
+                 " size\n");
+             return -EFAULT;
+           }
++
+           // Copy metadata.
+           not_copied = sizeof(struct disk_write_op_meta);
+           while (not_copied != 0) {
+@@ -158,34 +139,27 @@ static int disk_wrapper_ioctl(struct block_device* bdev, fmode_t mode,
+                 &(Device.current_log_write->metadata) + offset, not_copied);
+           }
+           break;
++          
+       case HWM_GET_LOG_DATA:
+           //printk(KERN_INFO "hwm: getting log entry data\n");
+           if (Device.current_log_write == NULL) {
+               printk(KERN_WARNING "hwm: no log entries to report data for\n");
+               return -ENODATA;
+           }
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 5, 0) && \
+-      LINUX_VERSION_CODE < KERNEL_VERSION(5, 5, 3)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(5, 6, 7))
+-      if (!access_ok((void*) arg,
+-#else
+-      if (!access_ok(VERIFY_WRITE, (void*) arg,
+-#endif
+-            Device.current_log_write->metadata.size)) {
+-        // TODO(ashmrtn): Find right error code.
++
++          if (!access_ok((void*) arg, Device.current_log_write->metadata.size)) {
+               return -EFAULT;
+           }
+ 
+           // Copy written data.
+           not_copied = Device.current_log_write->metadata.size;
+           while (not_copied != 0) {
+-        unsigned int offset =
+-          Device.current_log_write->metadata.size - not_copied;
++              unsigned int offset = Device.current_log_write->metadata.size - not_copied;
+               not_copied = copy_to_user((void*) (arg + offset),
+                   Device.current_log_write->data + offset, not_copied);
+           }
+           break;
++
+       case HWM_NEXT_ENT:
+           //printk(KERN_INFO "hwm: moving to next log entry\n");
+           if (Device.current_log_write == NULL) {
+@@ -194,13 +168,16 @@ static int disk_wrapper_ioctl(struct block_device* bdev, fmode_t mode,
+           }
+           Device.current_log_write = Device.current_log_write->next;
+           break;
++
+       case HWM_CLR_LOG:
+           printk(KERN_INFO "hwm: clearing data logs\n");
+           free_logs();
+           break;
++
+       case HWM_CHECKPOINT:
+           curr_time = ktime_get();
+           printk(KERN_INFO "hwm: making checkpoint in log\n");
++
+           // Create a new log entry that just says we got a checkpoint.
+           checkpoint = kzalloc(sizeof(struct disk_write_op), GFP_NOIO);
+           if (checkpoint == NULL) {
+@@ -211,6 +188,7 @@ static int disk_wrapper_ioctl(struct block_device* bdev, fmode_t mode,
+           checkpoint->metadata.bi_rw = HWM_CHECKPOINT_FLAG;
+           checkpoint->metadata.bi_flags = HWM_CHECKPOINT_FLAG;
+           checkpoint->metadata.time_ns = ktime_to_ns(curr_time);
++
+           // Aquire lock and add the new entry to the end of the list.
+           spin_lock(&Device.lock);
+           // Assuming spinlock keeps the compiler from reordering this before the
+@@ -222,284 +200,34 @@ static int disk_wrapper_ioctl(struct block_device* bdev, fmode_t mode,
+           // Drop lock and return success.
+           spin_unlock(&Device.lock);
+           break;
++
+       default:
+         ret = -EINVAL;
+     }
++    
+     return ret;
+ }
+ 
+-// The device operations structure.
+-static const struct block_device_operations disk_wrapper_ops = {
+-  .owner   = THIS_MODULE,
+-  .ioctl   = disk_wrapper_ioctl,
+-};
+ 
+ /*
+  * Converts from kernel specific flags to flags that CrashMonkey uses.
+- * Frustratingly, Linux switch to a completely differnt set of flags between 4.4
+- * and 4.15.
+  */
+-static unsigned long long convert_flags(unsigned long long flags) {
++static unsigned long long convert_flags(unsigned long long flags) 
++{
+     unsigned long long res = 0;
+ 
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)
+-  // These flags are in both 3.13 and 4.4.
+-  if (flags & REQ_WRITE) {
+-    res |= HWM_WRITE_FLAG;
+-  }
+-  if (flags & REQ_FAILFAST_DEV) {
+-    res |= HWM_FAILFAST_DEV_FLAG;
+-  }
+-  if (flags & REQ_FAILFAST_TRANSPORT) {
+-    res |= HWM_FAILFAST_TRANSPORT_FLAG;
+-  }
+-  if (flags & REQ_FAILFAST_DRIVER) {
+-    res |= HWM_FAILFAST_DRIVER_FLAG;
+-  }
+-  if (flags & REQ_SYNC) {
+-    res |= HWM_SYNC_FLAG;
+-  }
+-  if (flags & REQ_META) {
+-    res |= HWM_META_FLAG;
+-  }
+-  if (flags & REQ_PRIO) {
+-    res |= HWM_PRIO_FLAG;
+-  }
+-  if (flags & REQ_DISCARD) {
+-    res |= HWM_DISCARD_FLAG;
+-  }
+-  if (flags & REQ_SECURE) {
+-    res |= HWM_SECURE_FLAG;
+-  }
+-  if (flags & REQ_WRITE_SAME) {
+-    res |= HWM_WRITE_SAME_FLAG;
+-  }
+-  if (flags & REQ_NOIDLE) {
+-    res |= HWM_NOIDLE_FLAG;
+-  }
+-  if (flags & REQ_FUA) {
+-    res |= HWM_FUA_FLAG;
+-  }
+-  if (flags & REQ_FLUSH) {
+-    res |= HWM_FLUSH_FLAG;
+-  }
+-  if (flags & REQ_RAHEAD) {
+-    res |= HWM_READAHEAD_FLAG;
+-  }
+-  if (flags & REQ_THROTTLED) {
+-    res |= HWM_THROTTLED_FLAG;
+-  }
+-  if (flags & REQ_SORTED) {
+-    res |= HWM_SORTED_FLAG;
+-  }
+-  if (flags & REQ_SOFTBARRIER) {
+-    res |= HWM_SOFTBARRIER_FLAG;
+-  }
+-  if (flags & REQ_NOMERGE) {
+-    res |= HWM_NOMERGE_FLAG;
+-  }
+-  if (flags & REQ_STARTED) {
+-    res |= HWM_STARTED_FLAG;
+-  }
+-  if (flags & REQ_DONTPREP) {
+-    res |= HWM_DONTPREP_FLAG;
+-  }
+-  if (flags & REQ_QUEUED) {
+-    res |= HWM_QUEUED_FLAG;
+-  }
+-  if (flags & REQ_ELVPRIV) {
+-    res |= HWM_ELVPRIV_FLAG;
+-  }
+-  if (flags & REQ_FAILED) {
+-    res |= HWM_FAILED_FLAG;
+-  }
+-  if (flags & REQ_QUIET) {
+-    res |= HWM_QUIET_FLAG;
+-  }
+-  if (flags & REQ_PREEMPT) {
+-    res |= HWM_PREEMPT_FLAG;
+-  }
+-  if (flags & REQ_ALLOCED) {
+-    res |= HWM_ALLOCED_FLAG;
+-  }
+-  if (flags & REQ_COPY_USER) {
+-    res |= HWM_COPY_USER_FLAG;
+-  }
+-  if (flags & REQ_FLUSH_SEQ) {
+-    res |= HWM_FLUSH_SEQ_FLAG;
+-  }
+-  if (flags & REQ_IO_STAT) {
+-    res |= HWM_IO_STAT_FLAG;
+-  }
+-  if (flags & REQ_MIXED_MERGE) {
+-    res |= HWM_MIXED_MERGE_FLAG;
+-  }
+-  if (flags & REQ_PM) {
+-    res |= HWM_PM_FLAG;
+-  }
+-
+-//these are flags present in 3.16 but not 3.13
+-#if LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)
+-
+-  if (flags & REQ_PM) {
+-    res |= HWM_PM_FLAG;
+-  }
+-  if (flags & REQ_HASHED) {
+-    res |= HWM_HASHED_FLAG;
+-  }
+-  if (flags & REQ_MQ_INFLIGHT) {
+-    res |= HWM_MQ_INFLIGHT_FLAG;
+-  }
+-#endif
+-#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0))
+-// These are flags present in 4.4 but not 3.13.
+-  if (flags & REQ_PM) {
+-    res |= HWM_PM_FLAG;
+-  }
+-  if (flags & REQ_INTEGRITY) {
+-    res |= HWM_INTEGRITY_FLAG;
+-  }
+-  if (flags & REQ_HASHED) {
+-    res |= HWM_HASHED_FLAG;
+-  }
+-  if (flags & REQ_MQ_INFLIGHT) {
+-    res |= HWM_MQ_INFLIGHT_FLAG;
+-  }
+-  if (flags & REQ_NO_TIMEOUT) {
+-    res |= HWM_NO_TIMEOUT_FLAG;
+-  }
+-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0)
+-  if ((flags >> BIO_OP_SHIFT) == REQ_OP_WRITE) {
+-    res |= HWM_WRITE_FLAG;
+-  }
+-  if ((flags >> BIO_OP_SHIFT) == REQ_OP_DISCARD) {
+-    res |= HWM_DISCARD_FLAG;
+-  }
+-  if ((flags >> BIO_OP_SHIFT) == REQ_OP_SECURE_ERASE) {
+-    res |= HWM_SECURE_FLAG;
+-  }
+-  if ((flags >> BIO_OP_SHIFT) == REQ_OP_WRITE_SAME) {
+-    res |= HWM_WRITE_SAME_FLAG;
+-  }
+-  if ((flags >> BIO_OP_SHIFT) == REQ_OP_FLUSH) {
+-    res |= HWM_FLUSH_FLAG;
+-  }
+-  if (flags & REQ_FAILFAST_DEV) {
+-    res |= HWM_FAILFAST_DEV_FLAG;
+-  }
+-  if (flags & REQ_FAILFAST_TRANSPORT) {
+-    res |= HWM_FAILFAST_TRANSPORT_FLAG;
+-  }
+-  if (flags & REQ_FAILFAST_DRIVER) {
+-    res |= HWM_FAILFAST_DRIVER_FLAG;
+-  }
+-  if (flags & REQ_SYNC) {
+-    res |= HWM_SYNC_FLAG;
+-  }
+-  if (flags & REQ_META) {
+-    res |= HWM_META_FLAG;
+-  }
+-  if (flags & REQ_PRIO) {
+-    res |= HWM_PRIO_FLAG;
+-  }
+-  if (flags & REQ_NOIDLE) {
+-    res |= HWM_NOIDLE_FLAG;
+-  }
+-  if (flags & REQ_FUA) {
+-    res |= HWM_FUA_FLAG;
+-  }
+-  if (flags & REQ_PREFLUSH) {
+-    res |= HWM_FLUSH_FLAG;
+-  }
+-  if (flags & REQ_RAHEAD) {
+-    res |= HWM_READAHEAD_FLAG;
+-  }
+-  if (flags & REQ_THROTTLED) {
+-    res |= HWM_THROTTLED_FLAG;
+-  }
+-  if (flags & REQ_SORTED) {
+-    res |= HWM_SORTED_FLAG;
+-  }
+-  if (flags & REQ_SOFTBARRIER) {
+-    res |= HWM_SOFTBARRIER_FLAG;
+-  }
+-  if (flags & REQ_NOMERGE) {
+-    res |= HWM_NOMERGE_FLAG;
+-  }
+-  if (flags & REQ_STARTED) {
+-    res |= HWM_STARTED_FLAG;
+-  }
+-  if (flags & REQ_DONTPREP) {
+-    res |= HWM_DONTPREP_FLAG;
+-  }
+-  if (flags & REQ_QUEUED) {
+-    res |= HWM_QUEUED_FLAG;
+-  }
+-  if (flags & REQ_ELVPRIV) {
+-    res |= HWM_ELVPRIV_FLAG;
+-  }
+-  if (flags & REQ_FAILED) {
+-    res |= HWM_FAILED_FLAG;
+-  }
+-  if (flags & REQ_QUIET) {
+-    res |= HWM_QUIET_FLAG;
+-  }
+-  if (flags & REQ_PREEMPT) {
+-    res |= HWM_PREEMPT_FLAG;
+-  }
+-  if (flags & REQ_ALLOCED) {
+-    res |= HWM_ALLOCED_FLAG;
+-  }
+-  if (flags & REQ_COPY_USER) {
+-    res |= HWM_COPY_USER_FLAG;
+-  }
+-  if (flags & REQ_FLUSH_SEQ) {
+-    res |= HWM_FLUSH_SEQ_FLAG;
+-  }
+-  if (flags & REQ_IO_STAT) {
+-    res |= HWM_IO_STAT_FLAG;
+-  }
+-  if (flags & REQ_MIXED_MERGE) {
+-    res |= HWM_MIXED_MERGE_FLAG;
+-  }
+-  if (flags & REQ_PM) {
+-    res |= HWM_PM_FLAG;
+-  }
+-  if (flags & REQ_INTEGRITY) {
+-    res |= HWM_INTEGRITY_FLAG;
+-  }
+-  if (flags & REQ_HASHED) {
+-    res |= HWM_HASHED_FLAG;
+-  }
+-  if (flags & REQ_MQ_INFLIGHT) {
+-    res |= HWM_MQ_INFLIGHT_FLAG;
+-  }
+-
+-
+-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0) \
+-    && LINUX_VERSION_CODE < KERNEL_VERSION(4, 17, 0) || \
+-      LINUX_VERSION_CODE >= KERNEL_VERSION(5, 5, 0) && \
+-      LINUX_VERSION_CODE < KERNEL_VERSION(5, 5, 3) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(5, 6, 7))
+-
+     if ((flags & REQ_OP_MASK) == REQ_OP_WRITE) {
+         res |= HWM_WRITE_FLAG;
+     }
++
+     if ((flags & REQ_OP_MASK) == REQ_OP_DISCARD) {
+         res |= HWM_DISCARD_FLAG;
+     }
++
+     if ((flags & REQ_OP_MASK) == REQ_OP_SECURE_ERASE) {
+         res |= HWM_SECURE_FLAG;
+     }
+-  if ((flags & REQ_OP_MASK) == REQ_OP_WRITE_SAME) {
+-    res |= HWM_WRITE_SAME_FLAG;
+-  }
++
+     if ((flags & REQ_OP_MASK) == REQ_OP_WRITE_ZEROES) {
+         res |= HWM_WRITE_ZEROES_FLAG;
+     }
+@@ -507,145 +235,108 @@ static unsigned long long convert_flags(unsigned long long flags) {
+     if (flags & REQ_FAILFAST_DEV) {
+         res |= HWM_FAILFAST_DEV_FLAG;
+     }
++
+     if (flags & REQ_FAILFAST_TRANSPORT) {
+         res |= HWM_FAILFAST_TRANSPORT_FLAG;
+     }
++
+     if (flags & REQ_FAILFAST_DRIVER) {
+         res |= HWM_FAILFAST_DRIVER_FLAG;
+     }
++
+     if (flags & REQ_SYNC) {
+         res |= HWM_SYNC_FLAG;
+     }
++
+     if (flags & REQ_META) {
+         res |= HWM_META_FLAG;
+     }
++
+     if (flags & REQ_PRIO) {
+         res |= HWM_PRIO_FLAG;
+     }
++
+     if (flags & REQ_NOMERGE) {
+         res |= HWM_NOMERGE_FLAG;
+     }
+     if (!(flags & REQ_IDLE)) {
+         res |= HWM_NOIDLE_FLAG;
+     }
++
+     if (flags & REQ_INTEGRITY) {
+         res |= HWM_INTEGRITY_FLAG;
+     }
++
+     if (flags & REQ_FUA) {
+         res |= HWM_FUA_FLAG;
+     }
+     if (flags & REQ_PREFLUSH) {
+         res |= HWM_FLUSH_FLAG;
+     }
++
+     if (flags & REQ_RAHEAD) {
+         res |= HWM_READAHEAD_FLAG;
+     }
+ 
+-#else
+-#error "Unsupported kernel version: CrashMonkey has not been tested with " \
+-  "your kernel version."
+-#endif
+     return res;
+ }
+ 
+-static bool should_log(struct bio *bio) {
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)
+-  return
+-    (bio->BI_RW & REQ_FLUSH || bio->BI_RW & REQ_FUA ||
+-     bio->BI_RW & REQ_FLUSH_SEQ || bio->BI_RW & REQ_WRITE ||
+-     bio->BI_RW & REQ_DISCARD);
+-#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0))
+-  return
+-    ((bio_flags(bio) & REQ_FUA) || (bio_flags(bio) & REQ_PREFLUSH) ||
+-     (bio_op(bio) == REQ_OP_FLUSH) || (bio_op(bio) == REQ_OP_WRITE) ||
+-     (bio_op(bio) == REQ_OP_DISCARD) || (bio_op(bio) == REQ_OP_SECURE_ERASE) ||
+-     (bio_op(bio) == REQ_OP_WRITE_SAME) || (bio_flags(bio) & BIO_DISCARD_FLAG));
+-#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0) \
+-    && LINUX_VERSION_CODE < KERNEL_VERSION(4, 17, 0)) || \
+-      LINUX_VERSION_CODE >= KERNEL_VERSION(5, 5, 0) && \
+-      LINUX_VERSION_CODE < KERNEL_VERSION(5, 5, 3) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(5, 6, 7))
++
++static bool should_log(struct bio *bio) 
++{
+     return
+       ((bio->BI_RW & REQ_FUA) || (bio->BI_RW & REQ_PREFLUSH) ||
+       (bio->BI_RW & REQ_OP_FLUSH) || (bio_op(bio) == REQ_OP_WRITE) ||
+       (bio_op(bio) == BIO_DISCARD_FLAG) ||
+       (bio_op(bio) == REQ_OP_SECURE_ERASE) ||
+-     (bio_op(bio) == REQ_OP_WRITE_SAME) ||
+       (bio_op(bio) == REQ_OP_WRITE_ZEROES));
+-#else
+-#error "Unsupported kernel version: CrashMonkey has not been tested with " \
+-  "your kernel version."
+-#endif
+ }
+ 
++
+ /*
+  * Debug output to dmesg to see what is happening. Only tested on 3.13 and 4.4
+  * kernels (and mostly accurrate on 4.4). Only enabled for <= 4.4 kernels
+  * because I'm too lazy to do all the flag translations for this in 4.15. See
+  * the output log of a workload for the textual values CrashMonkey spits out.
+  */
+-static void print_rw_flags(unsigned long rw, unsigned long flags) {
+-#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)
+-  int i;
+-  printk(KERN_INFO "\traw rw flags: 0x%.8lx\n", rw);
+-  for (i = __REQ_WRITE; i < __REQ_NR_BITS; i++) {
+-    if (rw & (1ULL << i)) {
+-      printk(KERN_INFO "\t%s\n", flag_names[i]);
+-    }
+-  }
+-  printk(KERN_INFO "\traw flags flags: %.8lx\n", flags);
+-  for (i = __REQ_WRITE; i < __REQ_NR_BITS; i++) {
+-    if (flags & (1ULL << i)) {
+-      printk(KERN_INFO "\t%s\n", flag_names[i]);
+-    }
+-  }
+-#endif
+-}
+-
+-// TODO(ashmrtn): Currently not thread safe/reentrant. Make it so.
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 12, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0))
+-static void disk_wrapper_bio(struct request_queue* q, struct bio* bio) {
+-#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 17, 0)) || \
+-     LINUX_VERSION_CODE >= KERNEL_VERSION(5, 5, 0) && \
+-     LINUX_VERSION_CODE < KERNEL_VERSION(5, 5, 3) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(5, 6, 7))
+-static blk_qc_t disk_wrapper_bio(struct request_queue* q, struct bio* bio) {
+-#else
+-#error "Unsupported kernel version: CrashMonkey has not been tested with " \
+-  "your kernel version."
+-#endif
++// static void print_rw_flags(unsigned long rw, unsigned long flags) 
++// {
++//     int i;
++//     printk(KERN_INFO "\traw rw flags: 0x%.8lx\n", rw);
++//     for (i = REQ_OP_WRITE; i < __REQ_NR_BITS; i++) {
++//         if (rw & (1ULL << i)) {
++//             printk(KERN_INFO "\t%s\n", flag_names[i]);
++//         }
++//     }
++//     printk(KERN_INFO "\traw flags flags: %.8lx\n", flags);
++//     for (i = REQ_OP_WRITE; i < __REQ_NR_BITS; i++) {
++//         if (flags & (1ULL << i)) {
++//             printk(KERN_INFO "\t%s\n", flag_names[i]);
++//         }
++//     }
++// }
++
++
++// Currently not thread safe/reentrant. Make it so.
++static void disk_wrapper_bio(struct bio* bio) 
++{
+     int copied_data;
+     struct disk_write_op *write;
+     struct hwm_device* hwm;
+     ktime_t curr_time;
+ 
+-  /*
+-  printk(KERN_INFO "hwm: bio rw of size %u headed for 0x%lx (sector 0x%lx)"
+-      " has flags:\n", bio->BI_SIZE, bio->BI_SECTOR * 512, bio->BI_SECTOR);
+-  print_rw_flags(bio->BI_RW, bio->bi_flags);
+-  */
+-  // Log information about writes, fua, and flush/flush_seq events in kernel
+-  // memory.
++    
++    // printk(KERN_INFO "hwm: bio rw of size %u headed for 0x%lx (sector 0x%lx)"
++    //     " has flags:\n", bio->BI_SIZE, bio->BI_SECTOR * 512, bio->BI_SECTOR);
++    // print_rw_flags(bio->BI_RW, bio->bi_flags);
++    
++    // Log information about writes, fua, and flush/flush_seq events in kernel memory.
+     if (Device.log_on && should_log(bio)) {
+         curr_time = ktime_get();
+ 
+-    printk(KERN_INFO "hwm: bio rw of size %u headed for 0x%lx (sector 0x%lx)"
+-                     " has flags:\n", bio->BI_SIZE, bio->BI_SECTOR * 512,
+-           bio->BI_SECTOR);
+-    print_rw_flags(bio->BI_RW, bio->bi_flags);
++        // printk(KERN_WARNING "hwm: bio rw of size %u headed for 0x%llu (sector 0x%llu)"
++        //                 " has flags:\n", bio->BI_SIZE, bio->BI_SECTOR * 512, bio->BI_SECTOR);
++        // print_rw_flags(bio->BI_RW, bio->bi_flags);
+ 
+         // Log data to disk logs.
+         write = kzalloc(sizeof(struct disk_write_op), GFP_NOIO);
+@@ -662,6 +353,7 @@ static blk_qc_t disk_wrapper_bio(struct request_queue* q, struct bio* bio) {
+ 
+         // Protect playing around with our list of logged bios.
+         spin_lock(&Device.lock);
++
+         if (Device.current_write == NULL) {
+           // With the default first checkpoint, this case should never happen.
+           printk(KERN_WARNING "hwm: found empty list of previous disk ops\n");
+@@ -675,6 +367,7 @@ static blk_qc_t disk_wrapper_bio(struct request_queue* q, struct bio* bio) {
+           // chain and update pointers.
+           Device.current_write->next = write;
+         }
++
+         Device.current_write = write;
+         spin_unlock(&Device.lock);
+ 
+@@ -684,21 +377,9 @@ static blk_qc_t disk_wrapper_bio(struct request_queue* q, struct bio* bio) {
+             kfree(write);
+             goto passthrough;
+         }
+-    copied_data = 0;
+ 
+-    #if LINUX_VERSION_CODE < KERNEL_VERSION(3, 16, 0)
+-    struct bio_vec *vec;
+-    int iter;
+-    bio_for_each_segment(vec, bio, iter) {
+-      //printk(KERN_INFO "hwm: making new page for segment of data\n");
++        copied_data = 0;
+ 
+-      void *bio_data = kmap(vec->bv_page);
+-      memcpy((void*) (write->data + copied_data), bio_data + vec->bv_offset,
+-             vec->bv_len);
+-      kunmap(bio_data);
+-      copied_data += vec->bv_len;
+-    }
+-    #else
+         struct bio_vec vec;
+         struct bvec_iter iter;
+         bio_for_each_segment(vec, bio, iter) {
+@@ -710,58 +391,46 @@ static blk_qc_t disk_wrapper_bio(struct request_queue* q, struct bio* bio) {
+           kunmap(bio_data);
+           copied_data += vec.bv_len;
+         }
+-    #endif
+         // Sanity check which prints data copied to the log.
+-    /*
+-    printk(KERN_INFO "hwm: copied %ld bytes of from %lx data:"
+-        "\n~~~\n%s\n~~~\n",
+-        write->metadata.size, write->metadata.write_sector * 512,
+-        write->data);
+-    */
++        // printk(KERN_INFO "hwm: copied %u bytes of from %lx data:"
++        //     "\n~~~\n%p\n~~~\n",
++        //     write->metadata.size, write->metadata.write_sector * 512, write->data);
+     }
+ 
+ passthrough:
+     // Pass request off to normal device driver.
+-  hwm = (struct hwm_device*) q->queuedata;
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 12, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0))
+-  bio->bi_bdev = hwm->target_dev;
+-  submit_bio(bio->BI_RW, bio);
+-#elif (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0))
+-  bio->bi_bdev = hwm->target_dev;
+-  submit_bio(bio);
+-  return BLK_QC_T_NONE;
+-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 17, 0) || \
+-     LINUX_VERSION_CODE >= KERNEL_VERSION(5, 5, 0) && \
+-     LINUX_VERSION_CODE < KERNEL_VERSION(5, 5, 3) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(5, 6, 7))
+-  bio->bi_disk = hwm->target_dev;
+-  bio->bi_partno = hwm->target_partno;
++    // Get the value if gendisk (bio->bi_bdev->bd_disk = hwm->target_dev) without queue
++    hwm = (struct hwm_device*) &Device;
++
++    bio->bi_bdev = hwm->target_bd;
++    // printk(KERN_WARNING "hwm: target device: %s \n", bio->bi_bdev->bd_disk->disk_name);
++    // printk(KERN_WARNING "hwm: Major number is %d:\n", hwm->gd->major);
++    // printk(KERN_WARNING "hwm: Sending bio to cow_brd\n");
+     submit_bio(bio);
+-  return BLK_QC_T_NONE;
+-#else
+-#error "Unsupported kernel version: CrashMonkey has not been tested with " \
+-  "your kernel version."
+-#endif
++    // printk(KERN_WARNING "hwm: Sending bio to cow_brd done.....\n");
+ }
+ 
++
++
++// The device operations structure.
++static const struct block_device_operations disk_wrapper_ops = {
++    .owner   = THIS_MODULE,
++    .submit_bio = disk_wrapper_bio,
++    .ioctl   = disk_wrapper_ioctl,
++};
++
++
++static struct file *bdev_file, *flags_bdev_file;
++
+ // TODO(ashmrtn): Fix error when wrong device path is passed.
+-static int __init disk_wrapper_init(void) {
+-  unsigned int flush_flags;
++static int __init disk_wrapper_init(void) 
++{
++    printk(KERN_INFO "hwm: Hello World from disk_wrapper module\n");
+     unsigned long queue_flags;
+     struct block_device *flags_device, *target_device;
+     struct disk_write_op *first = NULL;
+     ktime_t curr_time;
+-  printk(KERN_INFO "hwm: Hello World from module\n");
++
+     if (strlen(target_device_path) == 0) {
+         return -ENOTTY;
+     }
+@@ -770,7 +439,8 @@ static int __init disk_wrapper_init(void) {
+     }
+     printk(KERN_INFO "hwm: Wrapping device %s with flags device %s\n", 
+                     target_device_path, flags_device_path);
+-  // Get memory for our starting disk epoch node.
++
++    // Initializing logging status and checkpoint counter
+     Device.log_on = false;
+     // Make a checkpoint marking the beginning of the log. This will be useful
+     // when watches are implemented and people begin a watch at the very start of
+@@ -784,9 +454,11 @@ static int __init disk_wrapper_init(void) {
+ 
+     curr_time = ktime_get();
+ 
++    //Initialize the checkpoint metadata
+     first->metadata.bi_rw = HWM_CHECKPOINT_FLAG;
+     first->metadata.bi_flags = HWM_CHECKPOINT_FLAG;
+     first->metadata.time_ns = ktime_to_ns(curr_time);
++
+     Device.writes = first;
+     Device.current_write = first;
+     Device.current_log_write = Device.current_write;
+@@ -798,49 +470,48 @@ static int __init disk_wrapper_init(void) {
+         goto out;
+     }
+ 
+-  target_device = blkdev_get_by_path(target_device_path,
+-      FMODE_READ, &Device);
++    bdev_file = bdev_file_open_by_path(strim(target_device_path), 
++            BLK_OPEN_READ, &Device, NULL);
++    if (IS_ERR(bdev_file)) {
++        printk(KERN_WARNING "hwm: unable to grab underlying device file with path %s\n", target_device_path);
++        goto out;
++    }
++    target_device = file_bdev(bdev_file);
++
+     if (!target_device || IS_ERR(target_device)) {
+         printk(KERN_WARNING "hwm: unable to grab underlying device\n");
+         goto out;
+     }
+-  if (!target_device->bd_queue) {
++    if (!target_device->bd_disk->queue) {
+         printk(KERN_WARNING "hwm: attempt to wrap device with no request queue\n");
+         goto out;
+     }
+-  if (!target_device->bd_queue->make_request_fn) {
+-    printk(KERN_WARNING "hwm: attempt to wrap device with no "
+-        "make_request_fn\n");
+-    goto out;
+-  }
+ 
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 12, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0))
+-  Device.target_dev = target_device;
+-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 17, 0) || \
+-     LINUX_VERSION_CODE >= KERNEL_VERSION(5, 5, 0) && \
+-     LINUX_VERSION_CODE < KERNEL_VERSION(5, 5, 3) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(5, 6, 7))
++    // pr_info("hwm: opened “%s” → disk=%s major=%d minor=%d "
++    //    "capacity=%llu sectors, log_blk_sz=%u\n",
++    //    target_device_path,
++    //    target_device->bd_disk->disk_name,
++    //    MAJOR(target_device->bd_dev),
++    //    MINOR(target_device->bd_dev),
++    //    (unsigned long long)get_capacity(target_device->bd_disk),
++    //    queue_logical_block_size(target_device->bd_disk->queue));
++       
+     Device.target_dev = target_device->bd_disk;
+-  Device.target_partno = target_device->bd_partno;
++    Device.target_partno = bdev_partno(target_device);
++    printk(KERN_INFO "hwm: Target device partition no %d\n", Device.target_partno);
+     Device.target_bd = target_device;
+-#else
+-#error "Unsupported kernel version: CrashMonkey has not been tested with " \
+-  "your kernel version."
+-#endif
++    // Device.bdev_file = bdev_file;
++ 
++    flags_bdev_file = bdev_file_open_by_path(strim(flags_device_path), 
++            BLK_OPEN_READ, NULL, NULL);
++    unsigned long flags_error = IS_ERR_VALUE((unsigned long)flags_bdev_file);
++
++    if (IS_ERR(flags_bdev_file)) {
++        printk(KERN_WARNING "hwm: unable to grab underlying device file %lu\n", flags_error);
++        goto out;
++    }
++    flags_device = file_bdev(flags_bdev_file);
+   
+-  // Get the device we should copy flags from and copy those flags into locals.
+-  flags_device = blkdev_get_by_path(flags_device_path, FMODE_READ, &Device);
+     if (!flags_device || IS_ERR(flags_device)) {
+         printk(KERN_WARNING "hwm: unable to grab device to clone flags\n");
+         goto out;
+@@ -849,71 +520,64 @@ static int __init disk_wrapper_init(void) {
+         printk(KERN_WARNING "hwm: attempt to wrap device with no request queue\n");
+         goto out;
+     }
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 12, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0))
+-  // Field not present in kernel 4.9+.
+-  flush_flags = flags_device->bd_queue->flush_flags;
+-#endif
++
+     queue_flags = flags_device->bd_queue->queue_flags;
+-  blkdev_put(flags_device, FMODE_READ);
++    fput(flags_bdev_file);
+ 
+     // Set up our internal device.
+     spin_lock_init(&Device.lock);
+-
+     // And the gendisk structure.
+-  Device.gd = alloc_disk(1);
++    Device.gd = blk_alloc_disk(NULL, NUMA_NO_NODE);
++ 
+     if (!Device.gd) {
++      printk(KERN_INFO "hwm: alloc_disk failure\n");
+       goto out;
+     }
+ 
+     Device.gd->private_data = &Device;
+     Device.gd->major = major_num;
++    printk(KERN_INFO "hwm: Major number is %d\n", major_num);
+     Device.gd->first_minor = target_device->bd_disk->first_minor;
+     Device.gd->minors = target_device->bd_disk->minors;
+     set_capacity(Device.gd, get_capacity(target_device->bd_disk));
+     strcpy(Device.gd->disk_name, "hwm");
+     Device.gd->fops = &disk_wrapper_ops;
++    // Device.gd->part0 = target_device;
+ 
+-  // Get a request queue.
+-  Device.gd->queue = blk_alloc_queue(GFP_KERNEL);
+     if (Device.gd->queue == NULL) {
++        printk(KERN_INFO "hwm: Device.gd queue null\n");
+         goto out;
+     }
+-  blk_queue_make_request(Device.gd->queue, disk_wrapper_bio);
+-  // Make this queue have the same flags as the queue we're feeding into.
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 12, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0))
+-  Device.gd->queue->flush_flags = flush_flags;
+-#endif
++
++
++    // printk(KERN_INFO "Before assigning\n");
++    // printk(KERN_INFO "Queue flags: %lu\n", Device.gd->queue->queue_flags);
++    // printk(KERN_INFO "Queue Data: %p\n", Device.gd->queue->queuedata);
++
++    // unsigned long flags = (1UL << QUEUE_FLAG_SAME_COMP) |
++    //                     (1UL << QUEUE_FLAG_INIT_DONE) |
++    //                     (1UL << QUEUE_FLAG_STATS) |
++    //                     (1UL << QUEUE_FLAG_REGISTERED) |
++    //                     (1UL << QUEUE_FLAG_SQ_SCHED); /* single queue style io dispatch */
++    
++    // printk(KERN_INFO "TESTING FLGAS : %lx\n", flags);
++    // Device.gd->queue->queue_flags = flags;
++
++    queue_flags &= ~(1UL << QUEUE_FLAG_SQ_SCHED);
++
+     Device.gd->queue->queue_flags = queue_flags;
+     Device.gd->queue->queuedata = &Device;
++
+     printk(KERN_INFO "hwm: working with queue with:\n\tflags 0x%lx\n", 
+         Device.gd->queue->queue_flags);
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 12, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0))
+-  printk(KERN_INFO "hwm: working with queue with:\n\tflush flags 0x%lx\n",
+-      Device.gd->queue->flush_flags);
+-#endif
+-
+-  add_disk(Device.gd);
++  
++    printk(KERN_INFO "hwm: Before add_disk");
++
++    int err = add_disk(Device.gd);
++    if(err) {
++        printk(KERN_INFO "hwm: Error in adding disk");
++        goto out;
++    }
+     
+     printk(KERN_NOTICE "hwm: initialized\n");
+     return 0;
+@@ -924,30 +588,18 @@ static int __init disk_wrapper_init(void) {
+ }
+ 
+ static void __exit hello_cleanup(void) {
++    printk(KERN_INFO "hwm: Starting clean up ....\n");
++
+     free_logs();
+-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 12, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 16, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(3, 17, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 1, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 2, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 4, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 5, 0)) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 9, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 10, 0))
+-  blkdev_put(Device.target_dev, FMODE_READ);
+-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 14, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(4, 17, 0) || \
+-     LINUX_VERSION_CODE >= KERNEL_VERSION(5, 5, 0) && \
+-     LINUX_VERSION_CODE < KERNEL_VERSION(5, 5, 3) || \
+-  (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 6, 0) && \
+-    LINUX_VERSION_CODE < KERNEL_VERSION(5, 6, 7))
+-  blkdev_put(Device.target_bd, FMODE_READ);
+-#else
+-#error "Unsupported kernel version: CrashMonkey has not been tested with " \
+-  "your kernel version."
+-#endif
+-  blk_cleanup_queue(Device.gd->queue);
++    // fput(Device.bdev_file);
++
++    if (bdev_file) {
++        fput(bdev_file);
++    }
++    if (Device.gd->queue){
++      blk_put_queue(Device.gd->queue);
++    }
++
+     del_gendisk(Device.gd);    
+     put_disk(Device.gd);      
+     unregister_blkdev(major_num, "hwm");
+@@ -957,3 +609,4 @@ static void __exit hello_cleanup(void) {
+ 
+ module_init(disk_wrapper_init);
+ module_exit(hello_cleanup);
++
+diff --git a/code/disk_wrapper.mod b/code/disk_wrapper.mod
+new file mode 100644
+index 0000000..1526fbf
+--- /dev/null
++++ b/code/disk_wrapper.mod
+@@ -0,0 +1 @@
++/home/kamal/crashmonkey-iocov/code/disk_wrapper.o
+diff --git a/code/harness/FsSpecific.cpp b/code/harness/FsSpecific.cpp
+index dac414c..25261ee 100644
+--- a/code/harness/FsSpecific.cpp
++++ b/code/harness/FsSpecific.cpp
+@@ -8,7 +8,7 @@ namespace {
+ 
+ constexpr char kMkfsStart[] = "mkfs -t ";
+ constexpr char kFsckCommand[] = "fsck -T -t ";
+-
++constexpr char kBtrfsCommand[] = "mkfs.btrfs ";
+ constexpr char kExtRemountOpts[] = "errors=remount-ro";
+ // Disable lazy init for now.
+ constexpr char kExtMkfsOpts[] =
+@@ -117,7 +117,7 @@ unsigned int ExtFsSpecific::GetPostRunDelaySeconds() {
+ constexpr char BtrfsFsSpecific::kFsType[];
+ 
+ string BtrfsFsSpecific::GetMkfsCommand(string &device_path) {
+-  return string(kMkfsStart) + BtrfsFsSpecific::kFsType + " " +  device_path;
++  return string(kBtrfsCommand) +  device_path;
+ }
+ 
+ string BtrfsFsSpecific::GetPostReplayMntOpts() {
+diff --git a/code/harness/Tester.cpp b/code/harness/Tester.cpp
+index 6d20898..32053c7 100755
+--- a/code/harness/Tester.cpp
++++ b/code/harness/Tester.cpp
+@@ -52,7 +52,7 @@
+ #define WRAPPER_INSMOD      "insmod " WRAPPER_MODULE_NAME " target_device_path="
+ #define WRAPPER_INSMOD2      " flags_device_path="
+ #define WRAPPER_RMMOD       "rmmod " WRAPPER_MODULE_NAME
+-
++//TODO (Tanya): Changed for 6.8 -> Need to revert
+ #define COW_BRD_MODULE_NAME "../build/cow_brd.ko"
+ #define COW_BRD_INSMOD      "insmod " COW_BRD_MODULE_NAME " num_disks="
+ #define COW_BRD_INSMOD2      " num_snapshots="
+@@ -135,6 +135,7 @@ void Tester::EndTestSuite() {
+   current_test_suite_ = NULL;
+ }
+ 
++
+ unsigned int Tester::GetPostRunDelay() {
+   return fs_specific_ops_->GetPostRunDelaySeconds();
+ }
+@@ -183,6 +184,11 @@ int Tester::mount_wrapper_device(const char* opts) {
+ }
+ 
+ int Tester::mount_device(const char* dev, const char* opts) {
++  cout << "Wrapper Path: " << dev <<  endl;
++  cout << "Operations : " << opts << endl;
++  cout << "Mount Point: " << MNT_MNT_POINT << endl;
++  cout << "fs type: " << fs_type.c_str() << endl;
++
+   if (mount(dev, MNT_MNT_POINT, fs_type.c_str(), 0, (void*) opts) < 0) {
+     disk_mounted = false;
+     return MNT_MNT_ERR;
+@@ -245,6 +251,7 @@ void Tester::getCompleteRunDiskClone() {
+ }
+ 
+ int Tester::insert_cow_brd() {
++  // cerr << "Error in Cow_BRD_FD" << cow_brd_fd << endl;
+   if (cow_brd_fd < 0) {
+     string command(COW_BRD_INSMOD);
+     command += NUM_DISKS;
+@@ -255,8 +262,14 @@ int Tester::insert_cow_brd() {
+     if (!verbose) {
+       command += SILENT;
+     }
+-    if (system(command.c_str()) != 0) {
++
++    cout << "*******Command for inserting cow brd module*************" << endl;
++    cout << command <<endl;
++    
++    int command_result = system(command.c_str());
++    if (command_result < 0) {
+       cow_brd_fd = -1;
++      cerr << "Error Wrapper insert in insert cow brd:" << command_result << endl;
+       return WRAPPER_INSERT_ERR;
+     }
+   }
+@@ -266,6 +279,7 @@ int Tester::insert_cow_brd() {
+     if (system(COW_BRD_RMMOD) != 0) {
+       cow_brd_fd = -1;
+       cow_brd_inserted = false;
++      cerr << "Error Wrapper remove in insert cow brd" << endl;
+       return WRAPPER_REMOVE_ERR;
+     }
+   }
+@@ -297,6 +311,7 @@ int Tester::remove_cow_brd() {
+       
+      if (res != 0) {
+         cow_brd_inserted = true;
++        cerr << "Unable to remove cow_brd device" << command.c_str() << endl;
+         return WRAPPER_REMOVE_ERR;
+       }
+      
+@@ -315,7 +330,12 @@ int Tester::insert_wrapper() {
+     if (!verbose) {
+       command += SILENT;
+     }
++
++    cout << "Command for inserting wrapper module" << endl;
++    cout << command << endl;
++    
+     if (system(command.c_str()) != 0) {
++      cerr << "Error inserting kernel wrapper module" << command.c_str() << endl;
+       wrapper_inserted = false;
+       return WRAPPER_INSERT_ERR;
+     }
+@@ -329,6 +349,9 @@ int Tester::remove_wrapper() {
+   if (wrapper_inserted) {
+     int res, num_tries = 0;
+     string command = WRAPPER_RMMOD SILENT;
++    cout << "Commands for removing disk wrapper module" << endl;
++    cout << command << endl;
++    
+     time_point<steady_clock> rmmod_start_time = steady_clock::now();
+     do {
+       res = system(command.c_str());
+@@ -605,6 +628,7 @@ int Tester::format_drive() {
+     command += SILENT;
+   }
+   if (system(command.c_str()) != 0) {
++    cerr << "Error formatting test drive" << device_mount << command.c_str() << endl;
+     return FMT_FMT_ERR;
+   }
+   return SUCCESS;
+@@ -1174,7 +1198,7 @@ void Tester::cleanup_harness() {
+   }
+ 
+   if (remove_cow_brd() != SUCCESS) {
+-    cerr << "Unable to remove cow_brd device" << endl;
++    //cerr << "Unable to remove cow_brd device" << endl;
+     permuter_unload_class();
+     test_unload_class();
+     return;
+diff --git a/code/harness/c_harness.cpp b/code/harness/c_harness.cpp
+index b604097..f7c82a1 100644
+--- a/code/harness/c_harness.cpp
++++ b/code/harness/c_harness.cpp
+@@ -282,6 +282,9 @@ int main(int argc, char** argv) {
+     cerr << "Error inserting RAM disk module" << endl;
+     return -1;
+   }
++
++  cout << "Success on Insertion RAM disk module" << endl;
++
+   test_harness.set_fs_type(fs_type);
+   test_harness.set_device(test_dev);
+   FILE *input;
+@@ -318,6 +321,7 @@ int main(int argc, char** argv) {
+       return -1;
+   }
+   
++  
+   test_harness.test_init_values(mount_dir, test_dev_size);
+   
+   // Load the permuter to use for the test.
+@@ -379,7 +383,7 @@ int main(int argc, char** argv) {
+     cout << "Formatting test drive" << endl;
+     logfile << "Formatting test drive" << endl;
+     if (test_harness.format_drive() != SUCCESS) {
+-      cerr << "Error formatting test drive" << endl;
++      //cerr << "Error formatting test drive" << endl;
+       test_harness.cleanup_harness();
+       return -1;
+     }
+@@ -538,7 +542,7 @@ int main(int argc, char** argv) {
+     cout << "Inserting wrapper module into kernel" << endl;
+     logfile << "Inserting wrapper module into kernel" << endl;
+     if (test_harness.insert_wrapper() != SUCCESS) {
+-      cerr << "Error inserting kernel wrapper module" << endl;
++      //cerr << "Error inserting kernel wrapper module" << endl;
+       test_harness.cleanup_harness();
+       return -1;
+     }
+diff --git a/code/tests/sub_dir_mmap.cpp b/code/tests/sub_dir_mmap.cpp
+index 76afb29..b1a0127 100644
+--- a/code/tests/sub_dir_mmap.cpp
++++ b/code/tests/sub_dir_mmap.cpp
+@@ -84,7 +84,7 @@ class echo_sub_dir_big : public BaseTestCase {
+ 
+       void* file_data = mmap(NULL, TEST_TEXT_SIZE, PROT_WRITE, MAP_SHARED, fd,
+           0);
+-      if (file_data <= 0) {
++      if (file_data != 0) {
+         return -1;
+       }
+       memcpy(file_data, text, TEST_TEXT_SIZE);
+
+
+diff --git a/xfsMonkey.py b/xfsMonkey.py
+index 751cc7c..7d70ba3 100755
+--- a/xfsMonkey.py
++++ b/xfsMonkey.py
+@@ -46,6 +46,7 @@ def cleanup():
+     (out, err) = p.communicate()
+     p.wait()
+     #print 'Done cleaning up test harness'
++    return out, err
+ 
+ def get_current_epoch_micros():
+     return int(time.time() * 1000)
+@@ -92,7 +93,7 @@ def validate_setup(parsed_args):
+ def main():
+ 
+     # Open the log file
+-	log_file = time.strftime('%Y%m%d_%H%M%S') + '-xfsMonkey.log'
++    log_file = 'logfile-xfsMonkey.log' #time.strftime('%Y%m%d_%H%M%S') + '-xfsMonkey.log'
+     log_file_handle = open(log_file, 'w')
+     original = sys.stdout
+     sys.stdout = Log(sys.stdout, log_file_handle)
+@@ -115,6 +116,8 @@ def main():
+ 
+     for filename in os.listdir(xfsMonkeyTestPath):
+         if filename.endswith('.so'): 
++            if test_num == 10:
++                break
+ 
+             #Assign a snapshot file name for replay using CrashMonkey.
+             #If we have a large number of tests in the test suite, then this might blow 
+@@ -130,8 +133,15 @@ def main():
+             str(parsed_args.disk_size) + ' ' + test_file + ' 2>&1')
+     
+             #Cleanup errors due to prev runs if any 
+-			cleanup()
+-
++            outClean, errClean = cleanup()
++            outClean = outClean.decode("utf-8")
++            errClean = errClean.decode("utf-8")
++            log = '\n' + '-'*20 + 'CLEANING UP  OUTPUT#' + str(test_num) +  '-'*20 + '\n'
++            log_file_handle.write(log)
++            log_file_handle.write(get_time_string() +  outClean)
++            log = '\n' + '-'*20 + 'CLEANING UP  ERROR#' + str(test_num) +  '-'*20 + '\n'
++            log_file_handle.write(log)
++            log_file_handle.write(get_time_string() + errClean)
+ 
+             #Print the test number
+             test_num+=1
+@@ -141,17 +151,18 @@ def main():
+             #Run the test now
+             log =  get_time_string() + 'Running test : '+ filename.replace('.so', '') + 'as Crashmonkey standalone \n'
+             log_file_handle.write(log)
+-			sys.stdout.write('Running test #' + str(test_num) + ' : ' + filename.replace('.so', '')) 
++            sys.stdout.write('Running test #' + str(test_num) + ' : ' + filename.replace('.so', '') + '\n') 
+             #get_time_string(), 'Running...'
+             
+             #Sometimes we face an error connecting to socket. So let's retry one more time
+             #if CM throws a error for a particular test.
+             retry = 0
+             while True:
+-				p=subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
++                p=subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+                 (output,err)=p.communicate()
+                 p_status=p.wait()
+                 output = output.decode("utf-8")
++                err = err.decode("utf-8")
+ 
+ 
+                 # Printing the output on stdout seems too noisy. It's cleaner to have only the result
+@@ -168,14 +179,27 @@ def main():
+                     if retry == 4 and p_status != 0 :
+                         log_file_handle.write(get_time_string() + 'Could not run test : ' + filename.replace('.so', ''))
+                     else:
+-						log_file_handle.write(res_final)	
++                        # log_file_handle.write(res_final)
++                        log_file_handle.write(output)
+                     break
+                 else:
+                     error = re.sub(r'(?s).*error', '\nError', output, flags=re.I)
+-					log_file_handle.write(get_time_string() +  error)
++                    # log_file_handle.write(get_time_string() +  error)
++                    log_file_handle.write(get_time_string() +  output)
+                     #os.system('bash vm_scripts/cm_cleanup.sh')
+-					cleanup()
+-					log_file_handle.write(get_time_string() + 'Retry running ' + filename.replace('.so', '') + '\n' + get_time_string() + 'Running... ')	 
++
++                    outClean, errClean = cleanup()
++                    outClean = outClean.decode("utf-8")
++                    errClean = errClean.decode("utf-8")
++                    log = '\n' + '-'*20 + 'CLEANING UP  OUTPUT#' + str(test_num) +  '-'*20 + '\n'
++                    log_file_handle.write(log)
++                    log_file_handle.write(get_time_string() +  outClean)
++                    log = '\n' + '-'*20 + 'CLEANING UP  ERROR#' + str(test_num) +  '-'*20 + '\n'
++                    log_file_handle.write(log)
++                    log_file_handle.write(get_time_string() + errClean)
++
++                    log_file_handle.write(get_time_string() + 'Retry running ' + filename.replace('.so', '') + '\n' + get_time_string() + 'Running... \n')
++                log_file_handle.write(get_time_string() +  err) 
+             file = filename.replace('.so', '')			
+             #diff_command = 'tail -vn +1 build/diff* >> diff_results/' + file  + '; rm build/diff*' 
+             #subprocess.call('cat build/diff* > out', shell=True)

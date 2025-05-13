@@ -36,6 +36,12 @@ fig, axs = plt.subplots(1, 2, figsize=(8, 4))
 colors = ['#1f77b4', '#ff7f0e']  # Blue and Orange (matplotlib defaults)
 hatches = ['...', '///']  # Dot-style and slant hatch
 
+# Labels below each subplot with larger font size
+axs[0].text(0.5, -0.25, "(a) xfstests", ha='center', va='top',
+            transform=axs[0].transAxes, fontsize=20)
+axs[1].text(0.5, -0.25, "(b) Metis", ha='center', va='top',
+            transform=axs[1].transAxes, fontsize=20)
+
 # Left subplot
 bars_l1 = axs[0].bar(x - width/2, xfstests_without_iocov, width, color=colors[0], edgecolor='black', hatch=hatches[0], label='Without IOCov')
 bars_l2 = axs[0].bar(x + width/2, xfstests_with_iocov, width, color=colors[1], edgecolor='black', hatch=hatches[1], label='With IOCov')
