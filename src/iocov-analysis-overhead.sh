@@ -25,6 +25,7 @@ END_TIME_NS=$(date +%s%N)
 # Compute elapsed time in milliseconds
 ELAPSED_NS=$((END_TIME_NS - START_TIME_NS))
 ELAPSED_MS=$(echo "scale=3; $ELAPSED_NS / 1000000" | bc)
+ELAPSED_SEC=$(echo "scale=3; $ELAPSED_NS / 1000000000" | bc)
 
 # Write result to file
-echo "Parse: ${ELAPSED_MS} milliseconds" >> "$RESULT_FILE"
+echo "Parse: ${ELAPSED_MS} milliseconds (${ELAPSED_SEC} seconds)" >> "$RESULT_FILE"
