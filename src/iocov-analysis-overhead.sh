@@ -10,10 +10,14 @@
 # LTTNG_LOG_FILE="metis-lttng-all-related-metis-xfs-3600-with-iocov-20250321-154425-chdir-fchdir-3601.log"
 # PLOT_NAME="metis-xfs-3600secs-iocov-20250321-154425"
 
+# LTTNG_LOG_FILE="metis-lttng-all-related-metis-ext4-3600-with-iocov-20250317-235752-chdir-fchdir-3601.log"
+# PLOT_NAME="metis-ext4-3600-with-iocov-20250317-235752"
+
 ################ LTTng log parse overhead ################
 
-LTTNG_LOG_FILE="xfstests-lttng-all-related-syscalls-ext4-generic-with-iocov-chdir-fchdir-6569.log"
-PLOT_NAME="xfstests-ext4-generic-6569"
+LTTNG_LOG_FILE="metis-lttng-all-related-metis-ext4-3600-with-iocov-20250317-235752-chdir-fchdir-3601.log"
+PLOT_NAME="metis-ext4-3600-with-iocov-20250317-235752"
+TEST_TYPE="metis"
 
 RESULT_FILE="overhead-time-iocov-parse-$PLOT_NAME.log"
 
@@ -27,7 +31,7 @@ sed -i.bak "s|^\( *\)default_lttng_log = '.*'|\1default_lttng_log = \"$ESCAPED_L
 START_TIME_NS=$(date +%s%N)
 
 # Run python script
-python3 iocov-main.py $PLOT_NAME --parse
+python3 iocov-main.py $PLOT_NAME -a $TEST_TYPE --parse
 
 # Get end time in nanoseconds
 END_TIME_NS=$(date +%s%N)
@@ -37,5 +41,7 @@ ELAPSED_NS=$((END_TIME_NS - START_TIME_NS))
 ELAPSED_MS=$(echo "scale=3; $ELAPSED_NS / 1000000" | bc)
 ELAPSED_SEC=$(echo "scale=3; $ELAPSED_NS / 1000000000" | bc)
 
+python3 iocov-main.py $PLOT_NAME -a $TEST_TYPE --no-parse --json
+
 # Write result to file
-echo "Parse: ${ELAPSED_MS} milliseconds (${ELAPSED_SEC} seconds)" >> "$RESULT_FILE"
+echo "$PLOT_NAME Parse: ${ELAPSED_MS} milliseconds (${ELAPSED_SEC} seconds)" >> "$RESULT_FILE"
