@@ -117,7 +117,7 @@ def main(args):
 
 if __name__ == "__main__":
     """
-    IMPORTANT: Need to edit find_testing_filename AND default_lttng_log path  
+    IMPORTANT: Need to default_lttng_log path (right after the script name) and -a test_type
 
     ################### Example usage commands ###################
     ## Parse LTTng logs and get pickle files for input/output cov only

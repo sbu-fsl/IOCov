@@ -12,6 +12,8 @@
 
 from utilities import *
 
+test_type = 'metis'
+
 open_entry = 'syscall_entry_openat:'
 open_exit = 'syscall_exit_openat:'
 
@@ -44,7 +46,7 @@ with open(logname, 'r', encoding="utf8", errors='ignore') as file:
             fg_list = find_number(line, 'flags = ') 
             if fg_list:
                 fg_int = int(fg_list[0])
-            fn_list = find_testing_filename(line, 'filename = ')
+            fn_list = find_testing_filename(test_type, line, 'filename = ')
             dfd_list = find_number(line, 'dfd = ')
             mcfs_valid_open =  False
             if is_mcfs and fg_int != 0:
