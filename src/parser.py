@@ -65,13 +65,15 @@ class TraceParser:
             (syscall-return) value: number of hit count of the key
     """
 
-    def __init__(self, path, name_suffix):
+    def __init__(self, path, name_suffix, test_type):
         # The path to the LTTng log file needs to be parsed
         self.path = path 
         # Suffix of input/output coverage pickle files, which is used 
         # to create other pkl files
         # E.g., 'input-cov-{}.pkl'.format(name_suffix)
         self.name_suffix = name_suffix
+        # The type of test (e.g., metis, xfstests, crashmonkey, etc.)
+        self.test_type = test_type
         # Dict to save all (filtered) input coverage
         self.input_cov = init_input_cov() 
         # Dict to save all (filtered) output coverage
@@ -176,7 +178,7 @@ class TraceParser:
             ## Filter 1: path name (open path could be a file or a dir)
             ## IMPORTANT: MAKE SURE THE find_testing_filename IS CORRECT  
             ## IN TERMS OF THE TESTING TOOL TO BE ANALYZED
-            fn_list = find_testing_filename(line, 'filename = ')
+            fn_list = find_testing_filename(self.test_type, line, 'filename = ')
             ## Filter 2: relative path (dfd)
             dfd_list = find_number(line, 'dfd = ')
             # if it's for desired mount points (e.g., xfstests test and scratch)
@@ -504,7 +506,7 @@ class TraceParser:
                 sys.exit('INPUT: {}/ftruncate - no length error'.format(scname))
 
             if 'syscall_entry_truncate:' in line:
-                fn_list = find_testing_filename(line, 'path = ')
+                fn_list = find_testing_filename(self.test_type, line, 'path = ')
                 if fn_list: 
                     self.valid_truncate = True 
                     if length_int in self.input_cov[scname]['length'].keys():
@@ -569,7 +571,7 @@ class TraceParser:
             else:
                 sys.exit('INPUT: {} - no mode error')
             fn_list = []
-            fn_list = find_testing_filename(line, 'pathname = ')
+            fn_list = find_testing_filename(self.test_type, line, 'pathname = ')
             dfd_list = find_number(line, 'dfd = ')
             if fn_list or (dfd_list and int(dfd_list[0]) in self.valid_fds) or (dfd_list and int(dfd_list[0]) == AT_FDCWD_VAL and self.valid_cwd): 
                 self.valid_mkdir = True
@@ -609,7 +611,7 @@ class TraceParser:
             # syscall_entry_chmod: filename
             # syscall_entry_fchmodat: dfd, filename
             if 'syscall_entry_chmod:' in line or 'syscall_entry_fchmodat:' in line:
-                fn_list = find_testing_filename(line, 'filename = ')
+                fn_list = find_testing_filename(self.test_type, line, 'filename = ')
                 dfd_list = find_number(line, 'dfd = ')
                 if fn_list or (dfd_list and int(dfd_list[0]) in self.valid_fds) or (dfd_list and int(dfd_list[0]) == AT_FDCWD_VAL and self.valid_cwd): 
                     self.valid_chmod = True
@@ -667,7 +669,7 @@ class TraceParser:
         # chdir/fchdir input
         if is_input:
             if 'syscall_entry_chdir' in line:
-                fn_list = find_testing_filename(line, 'filename = ')
+                fn_list = find_testing_filename(self.test_type, line, 'filename = ')
                 if fn_list:
                     self.valid_chdir = True
                 else:
@@ -724,7 +726,7 @@ class TraceParser:
                 sys.exit('INPUT: {}/fsetxattr - no flags error'.format(scname))            
 
             if 'syscall_entry_setxattr:' in line or 'syscall_entry_lsetxattr:' in line:
-                fn_list = find_testing_filename(line, 'pathname = ')
+                fn_list = find_testing_filename(self.test_type, line, 'pathname = ')
                 if fn_list:
                     self.valid_setxattr = True
                     if size_int in self.input_cov[scname]['size'].keys():
@@ -793,7 +795,7 @@ class TraceParser:
                 sys.exit('INPUT: {}/fgetxattr - no size error'.format(scname))         
 
             if 'syscall_entry_getxattr:' in line or 'syscall_entry_lgetxattr:' in line:
-                fn_list = find_testing_filename(line, 'pathname = ')
+                fn_list = find_testing_filename(self.test_type, line, 'pathname = ')
                 if fn_list:
                     self.valid_getxattr = True
                     if size_int in self.input_cov[scname]['size'].keys():

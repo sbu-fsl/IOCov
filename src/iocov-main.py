@@ -32,6 +32,7 @@ def main(args):
     """Main function to accept arguments and call parser and plotter"""
 
     # Fetch arguments
+    test_type = args.test_type
     need_parse = args.parse
     name_suffix = args.suffix
     # Define empty input/output coverage dict to be filled by parser or read from pickle files
@@ -49,7 +50,7 @@ def main(args):
             sys.exit('Cov pickle files already exist.')
         
         # Parse LTTng logs and get input/output coverage by calling TraceParser
-        tp = TraceParser(file_path, name_suffix)
+        tp = TraceParser(file_path, name_suffix, test_type)
         input_cov, output_cov, unfilter_input_cov = tp.cal_input_output_cov()
         
         # Write input/output cov to pickle files
@@ -174,6 +175,8 @@ if __name__ == "__main__":
     # Note that argparse.BooleanOptionalAction needs Python 3.9 and newer
     parser = argparse.ArgumentParser()
 
+    # Test type for parsing the LTTng log file
+    parser.add_argument('-a', '--test_type', type=str, default='metis', help='Specify the type of test of IOCov/LTTng trace log (e.g., metis, xfstests, crashmonkey)')
     # Parse LTTng log files and save to pickle files
     parser.add_argument('--parse', default=False, action=argparse.BooleanOptionalAction)
     # If need parse, we need to provide the log path
