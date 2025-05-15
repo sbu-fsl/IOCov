@@ -29,20 +29,28 @@ def find_cpu_id(text):
 
 ### RegEx matching for pathname
 ## xfstests
+# def find_xfstests_filename(text, c):
+#     return re.findall(r'%s\("/mnt/(test|scratch)[^"]*"\)' % c, text)
 def find_xfstests_filename(text, c):
-    return re.findall(r'%s\("/mnt/(test|scratch)[^"]*"\)' % c, text)
+    return re.findall(r'%s(\"/mnt.*\")' % c, text)
 
 # MCFS: everything inside MCFS test mountpoint
+# def find_mcfs_name(text, c):
+#     return re.findall(r'%s\("/mnt/test-[^-]+-i[0-9]-s[0-9][^"]*"\)' % c, text)
 def find_mcfs_name(text, c):
-    return re.findall(r'%s\("/mnt/test-[^-]+-i[0-9]-s[0-9][^"]*"\)' % c, text)
+    return re.findall(r'%s(\"/mnt/test-ext4-i0-s0.*\")' % c, text)
 
 # MCFS: all the files inside MCFS test mountpoint
+# def find_mcfs_filename(text, c):
+#     return re.findall(r'%s\("/mnt/test-[^-]+-i[0-9]-s[0-9]/.*f-0[0-9]"\)' % c, text)
 def find_mcfs_filename(text, c):
-    return re.findall(r'%s\("/mnt/test-[^-]+-i[0-9]-s[0-9]/.*f-0[0-9]"\)' % c, text)
+    return re.findall(r'%s(\"/mnt/test-ext4-i0-s0/.*f-0[0-9]\")' % c, text)
 
 # CrashMonkey: everything inside /mnt/snapshot
+# def find_crashmonkey_filename(text, c):
+#     return re.findall(r'%s\("/mnt/snapshot.*"\)' % c, text)
 def find_crashmonkey_filename(text, c):
-    return re.findall(r'%s\("/mnt/snapshot.*"\)' % c, text)
+    return re.findall(r'%s(\"/mnt/snapshot.*\")' % c, text)
 
 # Use find_mcfs_filename or find_mcfs_name for MCFS
 # Use find_xfstests_filename for xfstests
