@@ -1,5 +1,15 @@
 #!/bin/bash
 
+# Commands to use:
+#  - python3 iocov-main.py <plot_name> --parse
+#  - python3 iocov-main.py <plot_name> --no-parse --json
+#  - python3 iocov-main.py <plot_name> --parse
+#  - python3 iocov-main.py xfstests-ext4-generic-6569 --no-parse --json
+
+# Metis:
+# LTTNG_LOG_FILE="metis-lttng-all-related-metis-xfs-3600-with-iocov-20250321-154425-chdir-fchdir-3601.log"
+# PLOT_NAME="metis-xfs-3600secs-iocov-20250321-154425"
+
 ################ LTTng log parse overhead ################
 
 LTTNG_LOG_FILE="xfstests-lttng-all-related-syscalls-ext4-generic-with-iocov-chdir-fchdir-6569.log"
