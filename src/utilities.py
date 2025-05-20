@@ -59,7 +59,7 @@ def find_testing_filename(test_type, text, c):
     if test_type == 'xfstests':
         return find_xfstests_filename(text, c)
     elif test_type == 'metis':
-        return find_mcfs_name(text, c)
+        return find_mcfs_filename(text, c)
     elif test_type == 'crashmonkey':
         return find_crashmonkey_filename(text, c)
     else:

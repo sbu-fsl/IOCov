@@ -16,7 +16,7 @@
 ################ LTTng log parse overhead ################
 
 LTTNG_LOG_FILE="metis-lttng-all-related-metis-ext4-3600-with-iocov-20250317-235752-chdir-fchdir-3601.log"
-PLOT_NAME="metis-ext4-3600-with-iocov-20250317-235752"
+PLOT_NAME="filename-metis-ext4-3600-with-iocov-20250317-235752"
 TEST_TYPE="metis"
 
 RESULT_FILE="overhead-time-iocov-parse-$PLOT_NAME.log"

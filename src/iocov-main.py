@@ -144,7 +144,7 @@ if __name__ == "__main__":
 
     ## CrashMonkey example
     default_plot_name = 'crashmonkey'
-    default_lttng_log = 'crashmonkey-lttng-ext4-allrecur-614.log'
+    default_lttng_log = "metis-lttng-all-related-metis-ext4-3600-with-iocov-20250317-235752-chdir-fchdir-3601.log"
 
     ## Syzkaller example
     default_plot_name = 'syzkaller-26hours-2023-0708-0548'
@@ -157,7 +157,7 @@ if __name__ == "__main__":
     """
 
     # EDIT THIS LINE
-    default_lttng_log = 'small-xfstests-lttng-all-related-ext4-all-xattrs-4633.log'
+    default_lttng_log = "metis-lttng-all-related-metis-ext4-3600-with-iocov-20250317-235752-chdir-fchdir-3601.log"
 
     # Default values for arguments to manually set, no longer used
     # default_plot_name = 'xfstests-xattr-open-dump'
