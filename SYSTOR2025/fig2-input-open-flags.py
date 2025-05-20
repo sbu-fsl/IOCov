@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 matplotlib.rcParams['pdf.fonttype'] = 42
 matplotlib.rcParams['ps.fonttype'] = 42
+plt.rcParams['hatch.linewidth'] = 0.5  # lighter hatch lines
 import numpy as np
 import os
 import pickle
@@ -14,21 +15,17 @@ import math
 plt.rcParams["font.family"] = "Times New Roman"
 dpi_val = 600
 
-pkl_dir = '/mcfs/iocov-mcfs-fast24-2023-0723/IOCov/FAST2024/input-pickles'
-figure_dir = '/mcfs/iocov-mcfs-fast24-2023-0723/IOCov/FAST2024/expts-figures'
-# figure_file_name = 'input-cov-open-flags.pdf'
-figure_file_name = 'input-cov-open-flags.png'
+pkl_dir = '/mcfs/iocov-systor25-conf-2025-0520/IOCov-dev/SYSTOR2025/input-pickles'
+figure_dir = '/mcfs/iocov-systor25-conf-2025-0520/IOCov-dev/SYSTOR2025/expts-figures'
+figure_file_name = 'input-cov-open-flags.pdf'
+# figure_file_name = 'input-cov-open-flags.png'
 
 all_open_flags = []
 pkl_files = [
     'fig4_input_cov_crashmonkey.pkl', # CrashMonkey
     'fig4_input_cov_all_xfstests_xattrs.pkl', # xfstests
     'input-cov-syzkaller-debug-40mins-2023-0830.pkl', # Syzkaller 
-    'input-cov-mcfs-Uniform-50p-40mins-open-flags-20230905-003428-1106728.pkl', # Uniform 50%
-    # 'input-cov-mcfs-RZD-40mins-open-flags-20230904-033012-1045713.pkl', # Rank-size distribution 
-    # 'input-cov-mcfs-RZD-inverse-40mins-open-flags-20230904-042627-1069081.pkl' # Inverse Rank-size distribution 
-    'input_cov_mcfs_Prob_5factor_40mins_open_flags_20230810_181953_484817.pkl',
-    'input-cov-mcfs-WHM-inverse-40mins-open-flags-20230817-024926-918867.pkl'
+    'input-cov-metis-ext4-3600-with-iocov-20250317-235752.pkl' # Metis default
     ]
 num_tools = len(pkl_files)
 for i in range(num_tools):
@@ -78,7 +75,7 @@ height_inches = 3 # Example height, adjust as needed
 fig, ax = plt.subplots(figsize=(width_inches, height_inches))
 
 # Width of a bar 
-width = 0.1
+width = 0.15
 
 ax.set_yscale('log')
 
@@ -94,21 +91,29 @@ ax.set_ylim(ymin = 0.1)
 # print('all_data_arr: ', all_data_arr)
 
 # Plot the data
-bar_coords = [x_pos - 5 * width / 2, x_pos - 3 * width / 2, x_pos - width / 2, x_pos + width / 2, x_pos + 3 * width / 2, x_pos + 5 * width / 2]
+# bar_coords = [x_pos - 1.5 * width, x_pos - 0.5 * width, x_pos + 0.5 * width, x_pos + 1.5 * width]
 # bar_colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#17becf', '#8c564b']
-bar_colors = ['#333333', 'yellow', '#2ca02c', '#FF3333', '#17becf', '#993399']
-edgecolors = ['black', 'black', 'black', 'black', 'black', 'black']
-linewidths = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
-labels = ['CrashMonkey', 'xfstests', 'Syzkaller', 'Metis-Uniform', 'Metis-RSD', 'Metis-IRSD'] # IRSD: Inverse Rank-size distribution
+# bar_colors = ["#1f77b4",  # blue
+#           "#ff7f0e",  # orange
+#           "#2ca02c",  # green
+#           "#d62728"]  # red
+
+# Colors (colorblind + print friendly)
+bar_colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
+# Hatching patterns
+bar_hatches = ['////', '\\\\\\\\', '....', '++++']
+edgecolors = ['black', 'black', 'black', 'black']
+linewidths = [0.5, 0.5, 0.5, 0.5]
+labels = ['CrashMonkey', 'xfstests', 'Syzkaller', 'Metis']
 
 for i in range(num_tools):
-    ax.bar(bar_coords[i], all_data_arr[i], width, color=bar_colors[i], edgecolor=edgecolors[i], linewidth=linewidths[i], label=labels[i])
+    ax.bar(x_pos + (i - 1.5) * width, all_data_arr[i], width, color=bar_colors[i], hatch=bar_hatches[i], edgecolor=edgecolors[i], linewidth=linewidths[i], label=labels[i])
 
 ax.set_ylabel('Count (log scale base 10)', fontweight='bold', fontsize=10)
 # ax.set_xlabel('Open Flags', fontweight='bold', fontsize=10)
 
 # ax.legend(loc='best', ncol=len(labels))
-ax.legend(fontsize=8.5, loc='upper center', bbox_to_anchor=(0.5, 1.035), ncol=len(labels), frameon=False)
+ax.legend(fontsize=8.5, loc='upper center', bbox_to_anchor=(0.5, 1.15), ncol=len(labels), frameon=False)
 
 ax.set_axisbelow(True)
 ax.grid(axis='y', linestyle='-', alpha=0.3)
@@ -122,5 +127,5 @@ plt.xticks(x_pos + width / 2, x_labels, rotation=45, ha='right', fontsize=8)
 plt.tight_layout()
 
 # Save the plot to a PDF file as a vector plot
-# plt.savefig(os.path.join(figure_dir, figure_file_name), format='pdf', bbox_inches='tight')
-plt.savefig(os.path.join(figure_dir, figure_file_name), dpi=dpi_val, bbox_inches='tight')
+plt.savefig(os.path.join(figure_dir, figure_file_name), format='pdf', bbox_inches='tight')
+# plt.savefig(os.path.join(figure_dir, figure_file_name), dpi=dpi_val, bbox_inches='tight')
