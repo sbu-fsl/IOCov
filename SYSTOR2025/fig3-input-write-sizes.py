@@ -30,7 +30,7 @@ figure_dir = '/mcfs/iocov-systor25-conf-2025-0520/IOCov-dev/SYSTOR2025/expts-fig
 figure_file_name = 'fig3-input-cov-write-sizes.pdf'
 # figure_file_name = 'input-cov-write-sizes.png'
 
-width = 0.12
+width = 0.17
 
 num_tools = len(coord_pkl_files)
 
@@ -77,7 +77,7 @@ ytick_labels = ['0', '1', '10', '100', '1K', '10K', '100K', '1M', '10M']
 bar_coords = [x_pos - 1.5 * width, x_pos - 0.5 * width, x_pos + 0.5 * width, x_pos + 1.5 * width]
 # bar_colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#17becf', '#8c564b']
 bar_colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728']
-bar_hatches = ['////', '\\\\\\\\', '....', '++++']
+# bar_hatches = ['//', '\\\\', '..', '++']
 edgecolors = ['black', 'black', 'black', 'black']
 linewidths = [0.5, 0.5, 0.5, 0.5]
 labels = ['CrashMonkey', 'xfstests', 'Syzkaller', 'Metis']
