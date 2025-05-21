@@ -17,7 +17,7 @@ dpi_val = 600
 
 pkl_dir = '/mcfs/iocov-systor25-conf-2025-0520/IOCov-dev/SYSTOR2025/input-pickles'
 figure_dir = '/mcfs/iocov-systor25-conf-2025-0520/IOCov-dev/SYSTOR2025/expts-figures'
-figure_file_name = 'input-cov-open-flags.pdf'
+figure_file_name = 'fig2-input-cov-open-flags.pdf'
 # figure_file_name = 'input-cov-open-flags.png'
 
 all_open_flags = []
