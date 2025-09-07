@@ -20,3 +20,6 @@ pan*
 
 # Kernel analysis
 *.csv
+
+# ocal history backup files
+.history/
